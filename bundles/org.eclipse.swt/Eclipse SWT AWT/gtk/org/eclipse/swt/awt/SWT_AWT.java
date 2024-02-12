@@ -145,6 +145,7 @@ public static Frame getFrame (Composite parent) {
  * @since 3.0
  */
 public static Frame new_Frame (final Composite parent) {
+	if (OS.IsWin32) SWT.error (SWT.ERROR_NOT_IMPLEMENTED);
 	if (parent == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if ((parent.getStyle () & SWT.EMBEDDED) == 0) {
 		SWT.error (SWT.ERROR_INVALID_ARGUMENT);
@@ -267,6 +268,7 @@ public static Frame new_Frame (final Composite parent) {
  * @since 3.0
  */
 public static Shell new_Shell (final Display display, final Canvas parent) {
+	if (OS.IsWin32) SWT.error (SWT.ERROR_NOT_IMPLEMENTED);
 	if (display == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if (parent == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	long handle = 0;
