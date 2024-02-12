@@ -2604,6 +2604,9 @@ Dialog getModalDialog () {
  * windows.  See http://freedesktop.org/Standards/wm-spec.
  */
 Rectangle getWorkArea() {
+	if (OS.IsWin32) {
+		return null;
+	}
 	byte[] name = Converter.wcsToMbcs ("_NET_WORKAREA", true); //$NON-NLS-1$
 	long atom = GDK.gdk_atom_intern (name, true);
 	if (atom == GDK.GDK_NONE) return null;
@@ -3790,11 +3793,13 @@ void initializeSubclasses () {
 		OS.G_OBJECT_CLASS_SET_CONSTRUCTOR (pangoFontFaceClass, OS.pangoFontFaceNewProc_CALLBACK(pangoFontFaceNewProc));
 		OS.g_type_class_unref (pangoFontFaceClass);
 
-		long printerOptionWidgetType = GTK.gtk_printer_option_widget_get_type();
-		long printerOptionWidgetClass = OS.g_type_class_ref (printerOptionWidgetType);
-		printerOptionWidgetNewProc = OS.G_OBJECT_CLASS_CONSTRUCTOR (printerOptionWidgetClass);
-		OS.G_OBJECT_CLASS_SET_CONSTRUCTOR (printerOptionWidgetClass, OS.printerOptionWidgetNewProc_CALLBACK(printerOptionWidgetNewProc));
-		OS.g_type_class_unref (printerOptionWidgetClass);
+		if (!OS.IsWin32) { /* TODO [win32] replace unixprint */
+			long printerOptionWidgetType = GTK.gtk_printer_option_widget_get_type();
+			long printerOptionWidgetClass = OS.g_type_class_ref (printerOptionWidgetType);
+			printerOptionWidgetNewProc = OS.G_OBJECT_CLASS_CONSTRUCTOR (printerOptionWidgetClass);
+			OS.G_OBJECT_CLASS_SET_CONSTRUCTOR (printerOptionWidgetClass, OS.printerOptionWidgetNewProc_CALLBACK(printerOptionWidgetNewProc));
+			OS.g_type_class_unref (printerOptionWidgetClass);
+		}
 	}
 }
 
