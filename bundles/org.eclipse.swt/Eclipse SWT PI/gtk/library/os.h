@@ -60,6 +60,13 @@
 #define NO_gtk_1print_1unix_1dialog_1set_1embed_1page_1setup
 #define NO_gtk_1print_1unix_1dialog_1set_1manual_1capabilities
 
+// added 2024-02
+#define NO_gtk_1print_1unix_1dialog_1set_1has_1selection
+#define NO_gtk_1print_1unix_1dialog_1set_1support_1selection
+#define NO_gdk_1x11_1surface_1get_1xid
+#define NO_gdk_1x11_1surface_1lookup_1for_1display
+#define NO_XAnyEvent
+
 // map realpath to a similar function in win32
 #define realpath(N,R) _fullpath((R),(N),_MAX_PATH)
 #endif
