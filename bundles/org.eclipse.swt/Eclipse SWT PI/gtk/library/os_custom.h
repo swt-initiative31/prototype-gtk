@@ -38,6 +38,7 @@
 #define LIB_GLIB "libglib-2.0-0.dll"
 #define LIB_ATK "libatk-1.0-0.dll"
 #define LIB_FONTCONFIG "libfontconfig-1.dll"
+#define LIB_PANGO "libpango-1.0-0.dll"
 #else
 #if defined(GTK4)
 #define LIB_GTK "libgtk-4.so.1"
