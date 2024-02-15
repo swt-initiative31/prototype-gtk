@@ -92,7 +92,7 @@ case $OS in
 esac
 
 # Determine which CPU type we are building for
-if [ "${MODEL}" = "" ]; then
+if [ "${MODEL}" = "\${arch}" ]; then
 	if uname -i > /dev/null 2>&1; then
 		MODEL=`uname -i`
 		if [ ${MODEL} = 'unknown' ]; then
@@ -114,6 +114,14 @@ case $MODEL in
 esac
 
 case $SWT_OS.$SWT_ARCH in
+	"win32.x86_64")
+		if [ "${CC}" = "" ]; then
+			export CC=gcc
+		fi
+		if [ "${PKG_CONFIG_PATH}" = "" ]; then
+			export PKG_CONFIG_PATH="/usr/lib64/pkgconfig"
+		fi
+		;;
 	"linux.x86_64")
 		if [ "${CC}" = "" ]; then
 			export CC=gcc
