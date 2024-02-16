@@ -15,6 +15,13 @@
 
 # Makefile for creating SWT libraries for win32 GTK
 
+# assumes these variables are set in the environment from which make is run
+#	SWT_JAVA_HOME
+#	OUTPUT_DIR
+
+# SWT debug flags for various SWT components.
+#SWT_WEBKIT_DEBUG = -DWEBKIT_DEBUG
+
 # rewrite backslashes to slashes in paths
 SWT_JAVA_HOME := $(subst \,/,$(SWT_JAVA_HOME))
 OUTPUT_DIR := $(subst \,/,$(OUTPUT_DIR))
@@ -29,55 +36,59 @@ endif
 include make_common.mak
 
 SWT_VERSION=$(maj_ver)$(min_ver)r$(rev)
-GTK_VERSION?=2.0
+GTK_VERSION?=3.0
 
 # Define the various shared libraries to be build.
 WS_PREFIX = gtk
 SWT_PREFIX = swt
 AWT_PREFIX = swt-awt
-ifeq ($(GTK_VERSION), 3.0)
-SWTPI_PREFIX = swt-pi3
+ifeq ($(GTK_VERSION), 4.0)
+SWTPI_PREFIX = swt-pi4
 else
-SWTPI_PREFIX = swt-pi
+SWTPI_PREFIX = swt-pi3
 endif
 CAIRO_PREFIX = swt-cairo
 ATK_PREFIX = swt-atk
 # WEBKIT_PREFIX = swt-webkit
+GLX_PREFIX = swt-glx
 
 SWT_LIB = $(SWT_PREFIX)-$(WS_PREFIX)-$(SWT_VERSION).dll
 AWT_LIB = $(AWT_PREFIX)-$(WS_PREFIX)-$(SWT_VERSION).dll
 SWTPI_LIB = $(SWTPI_PREFIX)-$(WS_PREFIX)-$(SWT_VERSION).dll
 CAIRO_LIB = $(CAIRO_PREFIX)-$(WS_PREFIX)-$(SWT_VERSION).dll
 ATK_LIB = $(ATK_PREFIX)-$(WS_PREFIX)-$(SWT_VERSION).dll
+GLX_LIB = $(GLX_PREFIX)-$(WS_PREFIX)-$(SWT_VERSION).dll
 # WEBKIT_LIB = $(WEBKIT_PREFIX)-$(WS_PREFIX)-$(SWT_VERSION).dll
 
 CAIROCFLAGS = `pkg-config --cflags cairo`
-CAIROLIBS = `pkg-config --libs cairo`
+CAIROLIBS = `pkg-config --libs-only-L cairo` -lcairo
 
-GTKCFLAGS = `pkg-config --cflags gtk+-$(GTK_VERSION)`
-ifeq ($(GTK_VERSION), 3.0)
-GTKLIBS = `pkg-config --libs gtk+-$(GTK_VERSION) gthread-2.0` $(XLIB64)
+# Do not use pkg-config to get libs because it includes unnecessary dependencies (i.e. pangoxft-1.0)
+ifeq ($(GTK_VERSION), 4.0)
+GTKCFLAGS = `pkg-config --cflags gtk4 gtk4-x11`
+GTKLIBS = `pkg-config --libs gtk4 gtk4-x11 gthread-2.0` $(XLIB64) -lgtk-4 -lcairo -lgthread-2.0
+ATKCFLAGS = `pkg-config --cflags atk gtk4`
 else
-GTKLIBS = `pkg-config --libs gtk+-$(GTK_VERSION) gthread-2.0` $(XLIB64)
+GTKCFLAGS = `pkg-config --cflags gtk+-$(GTK_VERSION)`
+GTKLIBS = `pkg-config --libs gtk+-$(GTK_VERSION) gthread-2.0` $(XLIB64) -lgtk-3 -lgdk-3 -lcairo -lgthread-2.0
+ATKCFLAGS = `pkg-config --cflags atk gtk+-$(GTK_VERSION)`
 endif
 
-AWT_LFLAGS = -shared ${SWT_LFLAGS}
+AWT_LFLAGS = -shared ${SWT_LFLAGS} 
 AWT_LIBS = -L$(AWT_LIB_PATH) -ljawt
 
-ATKCFLAGS = `pkg-config --cflags atk gtk+-$(GTK_VERSION)`
-ATKLIBS = `pkg-config --libs atk`
+ATKLIBS = `pkg-config --libs atk` -latk-1.0 
 
-# Uncomment for Native Stats tool
-#NATIVE_STATS = -DNATIVE_STATS
+GLXLIBS = -lGL -lGLU -lm
 
 # WEBKITLIBS = `pkg-config --libs-only-l gio-2.0`
 # WEBKITCFLAGS = `pkg-config --cflags gio-2.0`
+
 # ifdef SWT_WEBKIT_DEBUG
-# # don't use 'webkit2gtk-4.0' in production,  as some systems might not have those libs and we get crashes.
+# don't use 'webkit2gtk-4.0' in production,  as some systems might not have those libs and we get crashes.
 # WEBKITLIBS +=  `pkg-config --libs-only-l webkit2gtk-4.0`
 # WEBKITCFLAGS +=  `pkg-config --cflags webkit2gtk-4.0`
 # endif
-
 
 SWT_OBJECTS = swt.o c.o c_stats.o callback.o
 AWT_OBJECTS = swt_awt.o
@@ -90,10 +101,12 @@ SWTPI_OBJECTS = swt.o os.o os_structs.o os_custom.o os_stats.o $(GTKX_OBJECTS)
 CAIRO_OBJECTS = swt.o cairo.o cairo_structs.o cairo_stats.o
 ATK_OBJECTS = swt.o atk.o atk_structs.o atk_custom.o atk_stats.o
 # WEBKIT_OBJECTS = swt.o webkitgtk.o webkitgtk_structs.o webkitgtk_stats.o webkitgtk_custom.o
+GLX_OBJECTS = swt.o glx.o glx_structs.o glx_stats.o
 
-CFLAGS = -O -Wall \
+CFLAGS := $(CFLAGS) \
 		-DSWT_VERSION=$(SWT_VERSION) \
 		$(SWT_DEBUG) \
+		$(SWT_WEBKIT_DEBUG) \
 		-DWIN32 -DGTK \
 		-I$(SWT_JAVA_HOME)/include \
 		-I$(SWT_JAVA_HOME)/include/win32 \
@@ -101,12 +114,20 @@ CFLAGS = -O -Wall \
 		${SWT_PTR_CFLAGS}
 LFLAGS = -shared -fPIC ${SWT_LFLAGS}
 
+# Treat all warnings as errors. If your new code produces a warning, please
+# take time to properly understand and fix/silence it as necessary.
+# CFLAGS += -Werror
+
 ifndef NO_STRIP
+	# -s = Remove all symbol table and relocation information from the executable.
+	#      i.e, more efficent code, but removes debug information. Should not be used if you want to debug.
+	#      https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html#Link-Options
+	#      http://stackoverflow.com/questions/14175040/effects-of-removing-all-symbol-table-and-relocation-information-from-an-executab
 	AWT_LFLAGS := $(AWT_LFLAGS) -s
 	LFLAGS := $(LFLAGS) -s
 endif
 
-all: make_swt make_atk
+all: make_swt make_atk # make_glx
 
 #
 # SWT libs
@@ -117,7 +138,7 @@ $(SWT_LIB): $(SWT_OBJECTS)
 	$(CC) $(LFLAGS) -o $(SWT_LIB) $(SWT_OBJECTS)
 
 callback.o: callback.c callback.h
-	$(CC) $(CFLAGS) -DUSE_ASSEMBLER -c callback.c
+	$(CC) $(CFLAGS) $(GTKCFLAGS) -DUSE_ASSEMBLER -c callback.c
 
 $(SWTPI_LIB): $(SWTPI_OBJECTS)
 	$(CC) $(LFLAGS) -o $(SWTPI_LIB) $(SWTPI_OBJECTS) $(GTKLIBS)
@@ -209,7 +230,24 @@ atk_stats.o: atk_stats.c atk_structs.h atk_stats.h atk.h
 # webkitgtk_custom.o: webkitgtk_custom.c
 #	$(CC) $(CFLAGS) $(WEBKITCFLAGS) -c webkitgtk_custom.c
 
+# #
+# # GLX lib
 #
+# make_glx: $(GLX_LIB)
+# 
+# $(GLX_LIB): $(GLX_OBJECTS)
+# 	$(CC) $(LFLAGS) -o $(GLX_LIB) $(GLX_OBJECTS) $(GLXLIBS)
+# 
+# glx.o: glx.c 
+# 	$(CC) $(CFLAGS) $(GLXCFLAGS) -c glx.c
+# 
+# glx_structs.o: glx_structs.c 
+# 	$(CC) $(CFLAGS) $(GLXCFLAGS) -c glx_structs.c
+# 	
+# glx_stats.o: glx_stats.c glx_stats.h
+# 	$(CC) $(CFLAGS) $(GLXCFLAGS) -c glx_stats.c
+ 	
+
 # Install
 #
 install: all
