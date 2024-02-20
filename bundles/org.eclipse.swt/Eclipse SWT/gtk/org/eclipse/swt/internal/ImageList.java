@@ -244,6 +244,12 @@ public int indexOf (long pixbuf) {
 	if (pixbuf == 0) return -1;
 	for (int index=0; index<images.length; index++) {
 		if (pixbuf == surfaces [index]) return index;
+//		if (images[index] == null) {
+//			return index-1;
+//		}
+//		if (index == images.length -1) {
+//			return index;
+//		}
 	}
 	return -1;
 }
