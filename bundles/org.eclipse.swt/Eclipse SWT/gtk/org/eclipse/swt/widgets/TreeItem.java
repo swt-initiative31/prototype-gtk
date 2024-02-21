@@ -253,9 +253,9 @@ Image _getImage(int index) {
 	long[] surfaceHandle = new long[1];
 	int modelIndex = parent.columnCount == 0 ? Tree.FIRST_COLUMN : parent.columns[index].modelIndex;
 	GTK.gtk_tree_model_get (parent.modelHandle, handle, modelIndex + Tree.CELL_SURFACE, surfaceHandle, -1);
-	if (surfaceHandle[0] == 0) return null;
+	if (surface == 0) return null;
 
-	int imageIndex = parent.imageList.indexOf(surfaceHandle[0]);
+	int imageIndex = parent.imageList.indexOf(surface);
 	if (imageIndex == -1) {
 		return null;
 	} else {
@@ -1583,7 +1583,10 @@ public void setImage(int index, Image image) {
 	GTK.gtk_tree_store_set(parent.modelHandle, handle, modelIndex + Tree.CELL_SURFACE, surface, -1);
 	cached = true;
 	updated = true;
+	this.surface = surface;
 }
+
+long surface;
 
 @Override
 public void setImage (Image image) {
