@@ -135,7 +135,7 @@ static int checkStyle (int style) {
 	checkWidget ();
 	int width = 0, height = 0, border = getBorderWidthInPixels ();
 	if ((style & SWT.SEPARATOR) != 0) {
-		int lineWidth = OS.GetSystemMetrics (OS.SM_CXBORDER);
+		int lineWidth = getSystemMetrics (OS.SM_CXBORDER);
 		if ((style & SWT.HORIZONTAL) != 0) {
 			width = DEFAULT_WIDTH;  height = lineWidth * 2;
 		} else {
@@ -535,7 +535,7 @@ void wmDrawChildSeparator(DRAWITEMSTRUCT struct) {
 	if ((style & SWT.SHADOW_NONE) != 0) return;
 
 	RECT rect = new RECT ();
-	int lineWidth = OS.GetSystemMetrics (OS.SM_CXBORDER);
+	int lineWidth = getSystemMetrics (OS.SM_CXBORDER);
 	int flags = (style & SWT.SHADOW_IN) != 0 ? OS.EDGE_SUNKEN : OS.EDGE_ETCHED;
 	if ((style & SWT.HORIZONTAL) != 0) {
 		int bottom = struct.top + Math.max (lineWidth * 2, (struct.bottom - struct.top) / 2);
@@ -553,7 +553,8 @@ void wmDrawChildImage(DRAWITEMSTRUCT struct) {
 	int height = struct.bottom - struct.top;
 	if (width == 0 || height == 0) return;
 
-	Rectangle imageRect = DPIUtil.autoScaleBounds(image.getBounds(), getZoom(), 100);
+	int zoom = getZoom();
+	Rectangle imageRect = DPIUtil.autoScaleBounds(image.getBounds(), zoom, 100);
 
 	int x = 0;
 	if ((style & SWT.CENTER) != 0) {
@@ -564,9 +565,9 @@ void wmDrawChildImage(DRAWITEMSTRUCT struct) {
 
 	GCData data = new GCData();
 	data.device = display;
-	GC gc = GC.win32_new (struct.hDC, data);
+	GC gc = createNewGC(struct.hDC, data);
 	Image image = getEnabled () ? this.image : new Image (display, this.image, SWT.IMAGE_DISABLE);
-	gc.drawImage (image, DPIUtil.autoScaleDown(x), DPIUtil.autoScaleDown(Math.max (0, (height - imageRect.height) / 2)));
+	gc.drawImage (image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(Math.max (0, (height - imageRect.height) / 2), zoom));
 	if (image != this.image) image.dispose ();
 	gc.dispose ();
 }
@@ -626,7 +627,7 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	}
 	Image image = label.getImage();
 	if (image != null) {
-		label.setImage(Image.win32_new(image, newZoom));
+		label.setImage(image);
 	}
 }
 }

@@ -28,12 +28,14 @@ package org.eclipse.swt.snippets;
  * http://www.eclipse.org/swt/snippets/
  */
 import org.eclipse.swt.*;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.ole.win32.*;
 import org.eclipse.swt.widgets.*;
 
+@SuppressWarnings("restriction")
 public class Snippet123 {
 
 public static void main(String[] args) {
@@ -107,6 +109,7 @@ public static void main(String[] args) {
 }
 // EventDispatch implements a simple IDispatch interface which will be called
 // when the event is fired.
+@SuppressWarnings("restriction")
 class EventDispatch {
 	private COMObject iDispatch;
 	private int refCount = 0;
@@ -190,11 +193,11 @@ class EventDispatch {
 		COM.MoveMemory(guid, riid, GUID.sizeof);
 
 		if (COM.IsEqualGUID(guid, COM.IIDIUnknown) || COM.IsEqualGUID(guid, COM.IIDIDispatch)) {
-			COM.MoveMemory(ppvObject, new long /*int*/[] {iDispatch.getAddress()}, OS.PTR_SIZEOF);
+			OS.MoveMemory(ppvObject, new long /*int*/[] {iDispatch.getAddress()}, C.PTR_SIZEOF);
 			AddRef();
 			return COM.S_OK;
 		}
-		COM.MoveMemory(ppvObject, new long /*int*/[] {0}, OS.PTR_SIZEOF);
+		OS.MoveMemory(ppvObject, new long /*int*/[] {0}, C.PTR_SIZEOF);
 		return COM.E_NOINTERFACE;
 	}
 	int Release() {

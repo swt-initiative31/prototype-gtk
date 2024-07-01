@@ -316,8 +316,8 @@ Control computeTabRoot () {
 	OS.AdjustWindowRectEx (rect, bits1, hasMenu, bits2);
 
 	/* Get the size of the scroll bars */
-	if (horizontalBar != null) rect.bottom += OS.GetSystemMetrics (OS.SM_CYHSCROLL);
-	if (verticalBar != null) rect.right += OS.GetSystemMetrics (OS.SM_CXVSCROLL);
+	if (horizontalBar != null) rect.bottom += getSystemMetrics (OS.SM_CYHSCROLL);
+	if (verticalBar != null) rect.right += getSystemMetrics (OS.SM_CXVSCROLL);
 
 	/* Compute the height of the menu bar */
 	if (hasMenu) {
@@ -326,7 +326,7 @@ Control computeTabRoot () {
 		OS.SendMessage (handle, OS.WM_NCCALCSIZE, 0, testRect);
 		while ((testRect.bottom - testRect.top) < height) {
 			if (testRect.bottom - testRect.top == 0) break;
-			rect.top -= OS.GetSystemMetrics (OS.SM_CYMENU) - OS.GetSystemMetrics (OS.SM_CYBORDER);
+			rect.top -= getSystemMetrics (OS.SM_CYMENU) - getSystemMetrics (OS.SM_CYBORDER);
 			OS.SetRect (testRect, 0, 0, rect.right - rect.left, rect.bottom - rect.top);
 			OS.SendMessage (handle, OS.WM_NCCALCSIZE, 0, testRect);
 		}
@@ -466,8 +466,8 @@ void fixDecorations (Decorations newDecorations, Control control, Menu [] menus)
 		* the window restored.  There is no fix for this problem at
 		* this time.
 		*/
-		if (horizontalBar != null) width -= OS.GetSystemMetrics (OS.SM_CYHSCROLL);
-		if (verticalBar != null) height -= OS.GetSystemMetrics (OS.SM_CXVSCROLL);
+		if (horizontalBar != null) width -= getSystemMetrics (OS.SM_CYHSCROLL);
+		if (verticalBar != null) height -= getSystemMetrics (OS.SM_CXVSCROLL);
 		RECT rect = new RECT ();
 		int bits1 = OS.GetWindowLong (handle, OS.GWL_STYLE);
 		int bits2 = OS.GetWindowLong (handle, OS.GWL_EXSTYLE);
@@ -902,11 +902,11 @@ void setImages (Image image, Image [] images) {
 					datas [i] = images [i].getImageData (getZoom());
 				}
 				images = bestImages;
-				sort (images, datas, OS.GetSystemMetrics (OS.SM_CXSMICON), OS.GetSystemMetrics (OS.SM_CYSMICON), depth);
+				sort (images, datas, getSystemMetrics (OS.SM_CXSMICON), getSystemMetrics (OS.SM_CYSMICON), depth);
 			}
 			smallIcon = images [0];
 			if (images.length > 1) {
-				sort (images, datas, OS.GetSystemMetrics (OS.SM_CXICON), OS.GetSystemMetrics (OS.SM_CYICON), depth);
+				sort (images, datas, getSystemMetrics (OS.SM_CXICON), getSystemMetrics (OS.SM_CYICON), depth);
 			}
 			largeIcon = images [0];
 		}
@@ -915,10 +915,10 @@ void setImages (Image image, Image [] images) {
 		switch (smallIcon.type) {
 			case SWT.BITMAP:
 				smallImage = Display.createIcon (smallIcon);
-				hSmallIcon = smallImage.handle;
+				hSmallIcon = Image.win32_getHandle(smallImage, getZoom());
 				break;
 			case SWT.ICON:
-				hSmallIcon = smallIcon.handle;
+				hSmallIcon = Image.win32_getHandle(smallIcon, getZoom());
 				break;
 		}
 	}
@@ -927,10 +927,10 @@ void setImages (Image image, Image [] images) {
 		switch (largeIcon.type) {
 			case SWT.BITMAP:
 				largeImage = Display.createIcon (largeIcon);
-				hLargeIcon = largeImage.handle;
+				hLargeIcon = Image.win32_getHandle(largeImage, getZoom());
 				break;
 			case SWT.ICON:
-				hLargeIcon = largeIcon.handle;
+				hLargeIcon = Image.win32_getHandle(largeIcon, getZoom());
 				break;
 		}
 	}
@@ -1695,22 +1695,20 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 
 	Image image = decorations.getImage();
 	if (image != null) {
-		decorations.setImage(Image.win32_new(image, newZoom));
+		decorations.setImage(image);
 	}
 
 	Image[] images = decorations.getImages();
 	if (images != null) {
-		for(Image subImage : images) {
-			if (subImage != null) {
-				Image.win32_new(subImage, newZoom);
-			}
-		}
 		decorations.setImages(images);
 	}
 
-	Menu menuBar = decorations.getMenuBar();
-	if (menuBar != null) {
-		DPIZoomChangeRegistry.applyChange(menuBar, newZoom, scalingFactor);
+	DPIZoomChangeRegistry.applyChange(decorations.getMenuBar(), newZoom, scalingFactor);
+
+	if (decorations.menus != null) {
+		for (Menu menu : decorations.menus) {
+			DPIZoomChangeRegistry.applyChange(menu, newZoom, scalingFactor);
+		}
 	}
 }
 }

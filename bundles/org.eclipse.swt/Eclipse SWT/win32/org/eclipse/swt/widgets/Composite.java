@@ -218,7 +218,8 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 		if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
 			changed |= (state & LAYOUT_CHANGED) != 0;
 			state &= ~LAYOUT_CHANGED;
-			size = DPIUtil.autoScaleUp(layout.computeSize (this, DPIUtil.autoScaleDown(wHint), DPIUtil.autoScaleDown(hHint), changed));
+			int zoom = getZoom();
+			size = DPIUtil.autoScaleUp(layout.computeSize (this, DPIUtil.scaleDown(wHint, zoom), DPIUtil.scaleDown(hHint, zoom), changed), zoom);
 		} else {
 			size = new Point (wHint, hHint);
 		}
@@ -233,7 +234,8 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	 * Since computeTrim can be overridden by subclasses, we cannot
 	 * call computeTrimInPixels directly.
 	 */
-	Rectangle trim = DPIUtil.autoScaleUp(computeTrim (0, 0, DPIUtil.autoScaleDown(size.x), DPIUtil.autoScaleDown(size.y)));
+	int zoom = getZoom();
+	Rectangle trim = DPIUtil.autoScaleUp(computeTrim (0, 0, DPIUtil.scaleDown(size.x, zoom), DPIUtil.scaleDown(size.y, zoom)), zoom);
 	return new Point (trim.width, trim.height);
 }
 
@@ -353,12 +355,13 @@ int applyThemeBackground () {
  */
 public void drawBackground (GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
 	checkWidget ();
-	x = DPIUtil.autoScaleUp(x);
-	y = DPIUtil.autoScaleUp(y);
-	width = DPIUtil.autoScaleUp(width);
-	height = DPIUtil.autoScaleUp(height);
-	offsetX = DPIUtil.autoScaleUp(offsetX);
-	offsetY = DPIUtil.autoScaleUp(offsetY);
+	int zoom = getZoom();
+	x = DPIUtil.autoScaleUp(x, zoom);
+	y = DPIUtil.autoScaleUp(y, zoom);
+	width = DPIUtil.autoScaleUp(width, zoom);
+	height = DPIUtil.autoScaleUp(height, zoom);
+	offsetX = DPIUtil.autoScaleUp(offsetX, zoom);
+	offsetY = DPIUtil.autoScaleUp(offsetY, zoom);
 	drawBackgroundInPixels(gc, x, y, width, height, offsetX, offsetY);
 }
 
@@ -878,10 +881,11 @@ Point minimumSize (int wHint, int hHint, boolean changed) {
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.
 	 */
-	Rectangle clientArea = DPIUtil.autoScaleUp(getClientArea ());
+	int zoom = getZoom();
+	Rectangle clientArea = DPIUtil.autoScaleUp(getClientArea (), zoom);
 	int width = 0, height = 0;
 	for (Control element : _getChildren ()) {
-		Rectangle rect = DPIUtil.autoScaleUp(element.getBounds ());
+		Rectangle rect = DPIUtil.autoScaleUp(element.getBounds (), zoom);
 		width = Math.max (width, rect.x - clientArea.x + rect.width);
 		height = Math.max (height, rect.y - clientArea.y + rect.height);
 	}
@@ -1523,7 +1527,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 				Control control = findBackgroundControl ();
 				if (control == null) control = this;
 				data.background = control.getBackgroundPixel ();
-				data.font = Font.win32_new(display, OS.SendMessage (handle, OS.WM_GETFONT, 0, 0));
+				data.font = Font.win32_new(display, OS.SendMessage (handle, OS.WM_GETFONT, 0, 0), nativeZoom);
 				data.uiState = (int)OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
 				if ((style & SWT.NO_BACKGROUND) != 0) {
 					/* This code is intentionally commented because it may be slow to copy bits from the screen */
@@ -1533,10 +1537,10 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 					OS.SetRect (rect, ps.left, ps.top, ps.right, ps.bottom);
 					drawBackground (phdc [0], rect);
 				}
-				GC gc = GC.win32_new (phdc [0], data);
+				GC gc = createNewGC(phdc [0], data);
 				Event event = new Event ();
 				event.gc = gc;
-				event.setBoundsInPixels(new Rectangle(ps.left, ps.top, width, height));
+				event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), getZoom()));
 				sendEvent (SWT.Paint, event);
 				if (data.focusDrawn && !isDisposed ()) updateUIState ();
 				gc.dispose ();
@@ -1606,6 +1610,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 				Event event = new Event ();
 				event.gc = gc;
 				RECT rect = null;
+				int zoom = getZoom();
 				if ((style & SWT.NO_MERGE_PAINTS) != 0 && OS.GetRgnBox (sysRgn, rect = new RECT ()) == OS.COMPLEXREGION) {
 					int nBytes = OS.GetRegionData (sysRgn, 0, null);
 					int [] lpRgnData = new int [nBytes / 4];
@@ -1617,7 +1622,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						if ((style & (SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | SWT.TRANSPARENT)) == 0) {
 							drawBackground (gc.handle, rect);
 						}
-						event.setBoundsInPixels(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top));
+						event.setBounds(DPIUtil.scaleDown(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), zoom));
 						event.count = count - 1 - i;
 						sendEvent (SWT.Paint, event);
 					}
@@ -1627,7 +1632,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						OS.SetRect (rect, ps.left, ps.top, ps.right, ps.bottom);
 						drawBackground (gc.handle, rect);
 					}
-					event.setBoundsInPixels(new Rectangle(ps.left, ps.top, width, height));
+					event.setBounds(DPIUtil.scaleDown(new Rectangle(ps.left, ps.top, width, height), zoom));
 					sendEvent (SWT.Paint, event);
 				}
 				// widget could be disposed at this point
@@ -1638,7 +1643,9 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 						if (gcData.focusDrawn && !isDisposed ()) updateUIState ();
 					}
 					gc.dispose();
-					if (!isDisposed ()) paintGC.drawImage (image, DPIUtil.autoScaleDown(ps.left), DPIUtil.autoScaleDown(ps.top));
+					if (!isDisposed ()) {
+						paintGC.drawImage (image, DPIUtil.scaleDown(ps.left, zoom), DPIUtil.scaleDown(ps.top, zoom));
+					}
 					image.dispose ();
 					gc = paintGC;
 				}
@@ -1697,10 +1704,10 @@ LRESULT WM_PRINTCLIENT (long wParam, long lParam) {
 			data.background = control.getBackgroundPixel ();
 			data.font = Font.win32_new(display, OS.SendMessage (handle, OS.WM_GETFONT, 0, 0));
 			data.uiState = (int)OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
-			GC gc = GC.win32_new (wParam, data);
+			GC gc = createNewGC(wParam, data);
 			Event event = new Event ();
 			event.gc = gc;
-			event.setBoundsInPixels(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top));
+			event.setBounds(DPIUtil.scaleDown(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), getZoom()));
 			sendEvent (SWT.Paint, event);
 			event.gc = null;
 			gc.dispose ();
@@ -1847,7 +1854,7 @@ LRESULT wmNCPaint (long hwnd, long wParam, long lParam) {
 				rect.right -= rect.left;
 				rect.bottom -= rect.top;
 				rect.left = rect.top = 0;
-				int border = OS.GetSystemMetrics (OS.SM_CXEDGE);
+				int border = getSystemMetrics (OS.SM_CXEDGE);
 				OS.ExcludeClipRect (hDC, border, border, rect.right - border, rect.bottom - border);
 				OS.DrawThemeBackground (display.hEditTheme (), hDC, OS.EP_EDITTEXT, OS.ETS_NORMAL, rect, null);
 				OS.ReleaseDC (hwnd, hDC);

@@ -142,6 +142,7 @@ public Tracker (Display display, int style) {
 	}
 	this.style = checkStyle (style);
 	this.display = display;
+	this.nativeZoom = display.getDeviceZoom();
 	reskinWidget ();
 }
 
@@ -404,7 +405,7 @@ public Rectangle [] getRectangles () {
 	checkWidget();
 	Rectangle [] result = getRectanglesInPixels();
 	for (int i = 0; i < result.length; i++) {
-		result[i] = DPIUtil.autoScaleDown(result[i]);
+		result[i] = DPIUtil.scaleDown(result[i], getZoom());
 	}
 	return result;
 }
@@ -845,7 +846,7 @@ public void setRectangles (Rectangle [] rectangles) {
 	if (rectangles == null) error (SWT.ERROR_NULL_ARGUMENT);
 	Rectangle [] rectanglesInPixels = new Rectangle [rectangles.length];
 	for (int i = 0; i < rectangles.length; i++) {
-		rectanglesInPixels [i] = DPIUtil.autoScaleUp (rectangles [i]);
+		rectanglesInPixels [i] = DPIUtil.autoScaleUp (rectangles [i], getZoom());
 	}
 	setRectanglesInPixels (rectanglesInPixels);
 }
@@ -998,7 +999,7 @@ LRESULT wmKeyDown (long hwnd, long wParam, long lParam) {
 			rectsToErase [i] = new Rectangle (current.x, current.y, current.width, current.height);
 		}
 		Event event = new Event ();
-		event.setLocationInPixels(oldX + xChange, oldY + yChange);
+		event.setLocation(DPIUtil.scaleDown(oldX + xChange, getZoom()), DPIUtil.scaleDown(oldY + yChange, getZoom()));
 		Point cursorPos;
 		if ((style & SWT.RESIZE) != 0) {
 			resizeRectangles (xChange, yChange);
@@ -1118,7 +1119,8 @@ LRESULT wmMouse (int message, long wParam, long lParam) {
 			rectsToErase [i] = new Rectangle (current.x, current.y, current.width, current.height);
 		}
 		Event event = new Event ();
-		event.setLocationInPixels(newX, newY);
+		int zoom = getZoom();
+		event.setLocation(DPIUtil.scaleDown(newX, zoom), DPIUtil.scaleDown(newY, zoom));
 		if ((style & SWT.RESIZE) != 0) {
 			if (isMirrored) {
 				resizeRectangles (oldX - newX, newY - oldY);

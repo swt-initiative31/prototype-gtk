@@ -120,11 +120,12 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam) {
  */
 public Rectangle computeTrim (int x, int y, int width, int height) {
 	checkWidget ();
-	x = DPIUtil.autoScaleUp(x);
-	y = DPIUtil.autoScaleUp(y);
-	width = DPIUtil.autoScaleUp(width);
-	height = DPIUtil.autoScaleUp(height);
-	return DPIUtil.autoScaleDown(computeTrimInPixels(x, y, width, height));
+	int zoom = getZoom();
+	x = DPIUtil.autoScaleUp(x, zoom);
+	y = DPIUtil.autoScaleUp(y, zoom);
+	width = DPIUtil.autoScaleUp(width, zoom);
+	height = DPIUtil.autoScaleUp(height, zoom);
+	return DPIUtil.scaleDown(computeTrimInPixels(x, y, width, height), zoom);
 }
 
 Rectangle computeTrimInPixels (int x, int y, int width, int height) {
@@ -134,8 +135,8 @@ Rectangle computeTrimInPixels (int x, int y, int width, int height) {
 	int bits1 = OS.GetWindowLong (scrolledHandle, OS.GWL_STYLE);
 	int bits2 = OS.GetWindowLong (scrolledHandle, OS.GWL_EXSTYLE);
 	OS.AdjustWindowRectEx (rect, bits1, false, bits2);
-	if (horizontalBar != null) rect.bottom += OS.GetSystemMetrics (OS.SM_CYHSCROLL);
-	if (verticalBar != null) rect.right += OS.GetSystemMetrics (OS.SM_CXVSCROLL);
+	if (horizontalBar != null) rect.bottom += getSystemMetrics (OS.SM_CYHSCROLL);
+	if (verticalBar != null) rect.right += getSystemMetrics (OS.SM_CXVSCROLL);
 	int nWidth = rect.right - rect.left, nHeight = rect.bottom - rect.top;
 	return new Rectangle (rect.left, rect.top, nWidth, nHeight);
 }
@@ -212,7 +213,7 @@ void destroyScrollBar (int type) {
  */
 public Rectangle getClientArea () {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getClientAreaInPixels());
+	return DPIUtil.scaleDown(getClientAreaInPixels(), getZoom());
 }
 
 Rectangle getClientAreaInPixels () {
