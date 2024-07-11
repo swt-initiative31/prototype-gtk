@@ -65,8 +65,8 @@ CAIROLIBS = `pkg-config --libs-only-L cairo` -lcairo
 
 # Do not use pkg-config to get libs because it includes unnecessary dependencies (i.e. pangoxft-1.0)
 ifeq ($(GTK_VERSION), 4.0)
-GTKCFLAGS = `pkg-config --cflags gtk4 gtk4-x11`
-GTKLIBS = `pkg-config --libs gtk4 gtk4-x11 gthread-2.0` $(XLIB64) -lgtk-4 -lcairo -lgthread-2.0
+GTKCFLAGS = `pkg-config --cflags gtk4`
+GTKLIBS = `pkg-config --libs gtk4 gthread-2.0` $(XLIB64) -lgtk-4 -lcairo -lgthread-2.0
 ATKCFLAGS = `pkg-config --cflags atk gtk4`
 else
 GTKCFLAGS = `pkg-config --cflags gtk+-$(GTK_VERSION)`

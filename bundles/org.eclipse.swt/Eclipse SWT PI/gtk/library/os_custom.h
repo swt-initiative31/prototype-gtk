@@ -32,8 +32,14 @@
 #define GtkTreeIter_sizeof() sizeof(GtkTreeIter)
 
 #ifdef _WIN32
+#if defined(GTK4)
+#define LIB_GTK "libgtk-4.dll"
+// Point GDK to GTK for GTK4
+#define LIB_GDK "libgtk-4.dll"
+#else
 #define LIB_GTK "libgtk-3-0.dll"
 #define LIB_GDK "libgdk-3-0.dll"
+#endif
 #define LIB_GTHREAD "libgthread-2.0-0.dll"
 #define LIB_GLIB "libglib-2.0-0.dll"
 #define LIB_ATK "libatk-1.0-0.dll"
