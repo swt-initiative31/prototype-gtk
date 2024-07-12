@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2022 IBM Corporation and others.
+ * Copyright (c) 2000, 2024 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -913,6 +913,42 @@ JNIEXPORT void JNICALL GTK3_NATIVE(gtk_1frame_1set_1shadow_1type)
 	GTK3_NATIVE_ENTER(env, that, gtk_1frame_1set_1shadow_1type_FUNC);
 	gtk_frame_set_shadow_type((GtkFrame *)arg0, (GtkShadowType)arg1);
 	GTK3_NATIVE_EXIT(env, that, gtk_1frame_1set_1shadow_1type_FUNC);
+}
+#endif
+
+#ifndef NO_gtk_1gesture_1drag_1new
+JNIEXPORT jlong JNICALL GTK3_NATIVE(gtk_1gesture_1drag_1new)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jlong rc = 0;
+	GTK3_NATIVE_ENTER(env, that, gtk_1gesture_1drag_1new_FUNC);
+	rc = (jlong)gtk_gesture_drag_new((GtkWidget *)arg0);
+	GTK3_NATIVE_EXIT(env, that, gtk_1gesture_1drag_1new_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_gtk_1gesture_1rotate_1new
+JNIEXPORT jlong JNICALL GTK3_NATIVE(gtk_1gesture_1rotate_1new)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jlong rc = 0;
+	GTK3_NATIVE_ENTER(env, that, gtk_1gesture_1rotate_1new_FUNC);
+	rc = (jlong)gtk_gesture_rotate_new((GtkWidget *)arg0);
+	GTK3_NATIVE_EXIT(env, that, gtk_1gesture_1rotate_1new_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_gtk_1gesture_1zoom_1new
+JNIEXPORT jlong JNICALL GTK3_NATIVE(gtk_1gesture_1zoom_1new)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jlong rc = 0;
+	GTK3_NATIVE_ENTER(env, that, gtk_1gesture_1zoom_1new_FUNC);
+	rc = (jlong)gtk_gesture_zoom_new((GtkWidget *)arg0);
+	GTK3_NATIVE_EXIT(env, that, gtk_1gesture_1zoom_1new_FUNC);
+	return rc;
 }
 #endif
 
@@ -2773,6 +2809,38 @@ JNIEXPORT void JNICALL GTK3_NATIVE(memmove__Lorg_eclipse_swt_internal_gtk3_GdkEv
 fail:
 	if (arg0 && lparg0) setGdkEventWindowStateFields(env, arg0, lparg0);
 	GTK3_NATIVE_EXIT(env, that, memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventWindowState_2JJ_FUNC);
+}
+#endif
+
+#ifndef NO_swt_1debug_1on_1fatal_1warnings
+JNIEXPORT void JNICALL GTK3_NATIVE(swt_1debug_1on_1fatal_1warnings)
+	(JNIEnv *env, jclass that)
+{
+	GTK3_NATIVE_ENTER(env, that, swt_1debug_1on_1fatal_1warnings_FUNC);
+	swt_debug_on_fatal_warnings();
+	GTK3_NATIVE_EXIT(env, that, swt_1debug_1on_1fatal_1warnings_FUNC);
+}
+#endif
+
+#ifndef NO_swt_1fixed_1accessible_1get_1type
+JNIEXPORT jlong JNICALL GTK3_NATIVE(swt_1fixed_1accessible_1get_1type)
+	(JNIEnv *env, jclass that)
+{
+	jlong rc = 0;
+	GTK3_NATIVE_ENTER(env, that, swt_1fixed_1accessible_1get_1type_FUNC);
+	rc = (jlong)swt_fixed_accessible_get_type();
+	GTK3_NATIVE_EXIT(env, that, swt_1fixed_1accessible_1get_1type_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_swt_1set_1lock_1functions
+JNIEXPORT void JNICALL GTK3_NATIVE(swt_1set_1lock_1functions)
+	(JNIEnv *env, jclass that)
+{
+	GTK3_NATIVE_ENTER(env, that, swt_1set_1lock_1functions_FUNC);
+	swt_set_lock_functions();
+	GTK3_NATIVE_EXIT(env, that, swt_1set_1lock_1functions_FUNC);
 }
 #endif
 

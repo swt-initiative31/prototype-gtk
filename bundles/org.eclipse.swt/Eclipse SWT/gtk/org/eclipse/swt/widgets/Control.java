@@ -5626,7 +5626,11 @@ boolean mustBeVisibleOnInitBounds() {
  * TODO currently phase is set to BUBBLE = 2. Look into using groups perhaps.
  */
 private void setDragGesture () {
-	dragGesture = GTK.gtk_gesture_drag_new (handle);
+	if (GTK.GTK4) {
+		dragGesture = GTK4.gtk_gesture_drag_new ();
+	}else {
+		dragGesture = GTK3.gtk_gesture_drag_new (handle);
+	}
 	GTK.gtk_event_controller_set_propagation_phase (dragGesture,
 	        2);
 	GTK.gtk_gesture_single_set_button (dragGesture, 0);
@@ -5640,7 +5644,12 @@ private void setDragGesture () {
 //}
 
 private void setRotateGesture () {
-	rotateGesture = GTK.gtk_gesture_rotate_new(handle);
+	if(GTK.GTK4) {
+		rotateGesture = GTK4.gtk_gesture_rotate_new();
+	}else {
+		rotateGesture = GTK3.gtk_gesture_rotate_new(handle);
+	}
+
 	GTK.gtk_event_controller_set_propagation_phase (rotateGesture,
 	        2);
 	OS.g_signal_connect (rotateGesture, OS.angle_changed, gestureRotation.getAddress(), this.handle);
@@ -5649,10 +5658,13 @@ private void setRotateGesture () {
 	return;
 }
 
-private void setZoomGesture () {
-	zoomGesture = GTK.gtk_gesture_zoom_new(handle);
-	GTK.gtk_event_controller_set_propagation_phase (zoomGesture,
-	        2);
+private void setZoomGesture() {
+	if (GTK.GTK4) {
+		zoomGesture = GTK4.gtk_gesture_zoom_new();
+	} else {
+		zoomGesture = GTK3.gtk_gesture_zoom_new(handle);
+	}
+	GTK.gtk_event_controller_set_propagation_phase(zoomGesture, 2);
 	OS.g_signal_connect(zoomGesture, OS.scale_changed, gestureZoom.getAddress(), this.handle);
 	OS.g_signal_connect(zoomGesture, OS.begin, gestureBegin.getAddress(), this.handle);
 	OS.g_signal_connect(zoomGesture, OS.end, gestureEnd.getAddress(), this.handle);

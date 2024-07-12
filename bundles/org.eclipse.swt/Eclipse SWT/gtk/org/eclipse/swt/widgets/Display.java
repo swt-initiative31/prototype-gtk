@@ -1186,7 +1186,7 @@ void createDisplay (DeviceData data) {
 		 * To allow them to be created on the main thread, GDK lock has to be reentrant.
 		 * This call replaces the standard GDK lock (GMutex) with GRecMutex.
 		 */
-		OS.swt_set_lock_functions ();
+		GTK3.swt_set_lock_functions ();
 		GDK.gdk_threads_init ();
 		GDK.gdk_threads_enter ();
 	}

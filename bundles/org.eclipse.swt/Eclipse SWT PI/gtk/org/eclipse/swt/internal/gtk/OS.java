@@ -17,6 +17,7 @@ package org.eclipse.swt.internal.gtk;
 import java.util.*;
 
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.gtk3.*;
 
 // Common type translation table:
 // C            ->  Java
@@ -111,7 +112,7 @@ public class OS extends C {
 			if (gtk4 != null && gtk4.equals("1")) {
 				System.err.println("SWT warning: SWT_FATAL_WARNINGS only available on GTK3.");
 			} else {
-				OS.swt_debug_on_fatal_warnings ();
+				GTK3.swt_debug_on_fatal_warnings ();
 			}
 		}
 	}
@@ -473,20 +474,9 @@ public class OS extends C {
 	 * @category custom
 	 */
 	public static final native long imContextLast();
-	/** @method flags=no_gen
-	 * @category custom
-	 */
-
-	/** @category custom */
-	/* Add ability to debug gtk warnings for SWT snippets via SWT_FATAL_WARNINGS=1
-	 * env variable. Please see Eclipse bug 471477 */
-	public static final native void swt_debug_on_fatal_warnings();
 
 	/** @category custom */
 	public static final native long swt_fixed_get_type();
-
-	/** @category custom */
-	public static final native long swt_fixed_accessible_get_type();
 	/**
 	 * @param obj cast=(AtkObject*)
 	 * @param is_native cast=(gboolean)
@@ -526,7 +516,6 @@ public class OS extends C {
 	 * @category custom
 	 */
 	public static final native void swt_fixed_remove(long container, long widget);
-	public static final native void swt_set_lock_functions();
 	/** @param str cast=(const gchar *)
 	 * @category custom
 	 */
@@ -2302,6 +2291,6 @@ public static final native long g_list_model_get_item(long list, int position);
  * @param len cast=(gssize)
  * @param destroy cast=(GDestroyNotify)
  */
-public static final native long g_memory_input_stream_new_from_data(long data, long len, long destroy);
+public static final native long g_memory_input_stream_new_from_data(long data, long len, long destroy);;
 
 }

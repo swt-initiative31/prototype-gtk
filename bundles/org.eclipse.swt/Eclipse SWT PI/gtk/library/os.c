@@ -4971,18 +4971,6 @@ fail:
 }
 #endif
 
-#ifndef NO_gtk_1gesture_1drag_1new
-JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1gesture_1drag_1new)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	GTK_NATIVE_ENTER(env, that, gtk_1gesture_1drag_1new_FUNC);
-	rc = (jlong)gtk_gesture_drag_new((GtkWidget *)arg0);
-	GTK_NATIVE_EXIT(env, that, gtk_1gesture_1drag_1new_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_gtk_1gesture_1get_1last_1updated_1sequence
 JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1gesture_1get_1last_1updated_1sequence)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -5038,18 +5026,6 @@ JNIEXPORT jdouble JNICALL GTK_NATIVE(gtk_1gesture_1rotate_1get_1angle_1delta)
 }
 #endif
 
-#ifndef NO_gtk_1gesture_1rotate_1new
-JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1gesture_1rotate_1new)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	GTK_NATIVE_ENTER(env, that, gtk_1gesture_1rotate_1new_FUNC);
-	rc = (jlong)gtk_gesture_rotate_new((GtkWidget *)arg0);
-	GTK_NATIVE_EXIT(env, that, gtk_1gesture_1rotate_1new_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_gtk_1gesture_1single_1get_1current_1button
 JNIEXPORT jint JNICALL GTK_NATIVE(gtk_1gesture_1single_1get_1current_1button)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -5099,18 +5075,6 @@ JNIEXPORT jdouble JNICALL GTK_NATIVE(gtk_1gesture_1zoom_1get_1scale_1delta)
 	GTK_NATIVE_ENTER(env, that, gtk_1gesture_1zoom_1get_1scale_1delta_FUNC);
 	rc = (jdouble)gtk_gesture_zoom_get_scale_delta((GtkGestureZoom *)arg0);
 	GTK_NATIVE_EXIT(env, that, gtk_1gesture_1zoom_1get_1scale_1delta_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_gtk_1gesture_1zoom_1new
-JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1gesture_1zoom_1new)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	GTK_NATIVE_ENTER(env, that, gtk_1gesture_1zoom_1new_FUNC);
-	rc = (jlong)gtk_gesture_zoom_new((GtkWidget *)arg0);
-	GTK_NATIVE_EXIT(env, that, gtk_1gesture_1zoom_1new_FUNC);
 	return rc;
 }
 #endif
@@ -14881,28 +14845,6 @@ fail:
 }
 #endif
 
-#ifndef NO_swt_1debug_1on_1fatal_1warnings
-JNIEXPORT void JNICALL OS_NATIVE(swt_1debug_1on_1fatal_1warnings)
-	(JNIEnv *env, jclass that)
-{
-	OS_NATIVE_ENTER(env, that, swt_1debug_1on_1fatal_1warnings_FUNC);
-	swt_debug_on_fatal_warnings();
-	OS_NATIVE_EXIT(env, that, swt_1debug_1on_1fatal_1warnings_FUNC);
-}
-#endif
-
-#ifndef NO_swt_1fixed_1accessible_1get_1type
-JNIEXPORT jlong JNICALL OS_NATIVE(swt_1fixed_1accessible_1get_1type)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	OS_NATIVE_ENTER(env, that, swt_1fixed_1accessible_1get_1type_FUNC);
-	rc = (jlong)swt_fixed_accessible_get_type();
-	OS_NATIVE_EXIT(env, that, swt_1fixed_1accessible_1get_1type_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_swt_1fixed_1accessible_1register_1accessible
 JNIEXPORT void JNICALL OS_NATIVE(swt_1fixed_1accessible_1register_1accessible)
 	(JNIEnv *env, jclass that, jlong arg0, jboolean arg1, jlong arg2)
@@ -14972,16 +14914,6 @@ JNIEXPORT void JNICALL OS_NATIVE(swt_1fixed_1restack)
 	OS_NATIVE_ENTER(env, that, swt_1fixed_1restack_FUNC);
 	swt_fixed_restack((SwtFixed*)arg0, (GtkWidget*)arg1, (GtkWidget*)arg2, arg3);
 	OS_NATIVE_EXIT(env, that, swt_1fixed_1restack_FUNC);
-}
-#endif
-
-#ifndef NO_swt_1set_1lock_1functions
-JNIEXPORT void JNICALL OS_NATIVE(swt_1set_1lock_1functions)
-	(JNIEnv *env, jclass that)
-{
-	OS_NATIVE_ENTER(env, that, swt_1set_1lock_1functions_FUNC);
-	swt_set_lock_functions();
-	OS_NATIVE_EXIT(env, that, swt_1set_1lock_1functions_FUNC);
 }
 #endif
 

@@ -36,7 +36,7 @@ endif
 include make_common.mak
 
 SWT_VERSION=$(maj_ver)$(min_ver)r$(rev)
-GTK_VERSION?=3.0
+GTK_VERSION?=4.0
 
 # Define the various shared libraries to be build.
 WS_PREFIX = gtk
@@ -108,8 +108,8 @@ CFLAGS := $(CFLAGS) \
 		$(SWT_DEBUG) \
 		$(SWT_WEBKIT_DEBUG) \
 		-DWIN32 -DGTK \
-		-I$(SWT_JAVA_HOME)/include \
-		-I$(SWT_JAVA_HOME)/include/win32 \
+		-I"$(SWT_JAVA_HOME)/include" \
+		-I"$(SWT_JAVA_HOME)/include/win32" \
 		-fPIC \
 		${SWT_PTR_CFLAGS}
 LFLAGS = -shared -fPIC ${SWT_LFLAGS}
