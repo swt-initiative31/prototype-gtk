@@ -610,8 +610,10 @@ public class GTK4 {
 	/** @param formats cast=(GdkContentFormats *) */
 	public static final native long gdk_content_formats_to_string(long formats);
 	
-	public static final native long gtk_gesture_drag_new();
-	public static final native long gtk_gesture_zoom_new();
 	public static final native long gtk_gesture_rotate_new();
+
+	public static final native long gtk_gesture_zoom_new();
+	
+	public static final native long gtk_gesture_drag_new();
 
 }

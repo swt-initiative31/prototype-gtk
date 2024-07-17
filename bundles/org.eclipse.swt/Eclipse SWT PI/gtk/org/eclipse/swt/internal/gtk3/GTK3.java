@@ -1068,7 +1068,7 @@ public class GTK3 {
 	/**
 	 * @param widget cast=(GtkWidget *)
 	 */
-	public static final native long gtk_gesture_drag_new(long widget);
+	public static final native long gtk_gesture_rotate_new(long widget);
 	/**
 	 * @param widget cast=(GtkWidget *)
 	 */
@@ -1076,18 +1076,7 @@ public class GTK3 {
 	/**
 	 * @param widget cast=(GtkWidget *)
 	 */
-	public static final native long gtk_gesture_rotate_new(long widget);
-	public static final native void swt_set_lock_functions();
-	/** @method flags=no_gen
-	 * @category custom
-	 */
-
-	/** @category custom */
-	/* Add ability to debug gtk warnings for SWT snippets via SWT_FATAL_WARNINGS=1
-	 * env variable. Please see Eclipse bug 471477 */
-	public static final native void swt_debug_on_fatal_warnings();
-	/** @category custom */
-	public static final native long swt_fixed_accessible_get_type();
+	public static final native long gtk_gesture_drag_new(long widget);
 
 	/* Sizeof */
 	public static final native int GtkTargetEntry_sizeof();
@@ -1100,4 +1089,5 @@ public class GTK3 {
 	public static final native int GdkEventWindowState_sizeof();
 	public static final native int GdkGeometry_sizeof();
 	public static final native int GdkWindowAttr_sizeof();
+	
 }

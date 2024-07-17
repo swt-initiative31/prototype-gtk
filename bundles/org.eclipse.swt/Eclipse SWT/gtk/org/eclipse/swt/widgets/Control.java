@@ -5625,15 +5625,14 @@ boolean mustBeVisibleOnInitBounds() {
  * X11/Wayland window managers after GTK3.14.
  * TODO currently phase is set to BUBBLE = 2. Look into using groups perhaps.
  */
-private void setDragGesture () {
+private void setDragGesture() {
 	if (GTK.GTK4) {
-		dragGesture = GTK4.gtk_gesture_drag_new ();
-	}else {
-		dragGesture = GTK3.gtk_gesture_drag_new (handle);
+		dragGesture = GTK4.gtk_gesture_drag_new();
+	} else {
+		dragGesture = GTK3.gtk_gesture_drag_new(handle);
 	}
-	GTK.gtk_event_controller_set_propagation_phase (dragGesture,
-	        2);
-	GTK.gtk_gesture_single_set_button (dragGesture, 0);
+	GTK.gtk_event_controller_set_propagation_phase(dragGesture, 2);
+	GTK.gtk_gesture_single_set_button(dragGesture, 0);
 	OS.g_signal_connect(dragGesture, OS.begin, gestureBegin.getAddress(), this.handle);
 	OS.g_signal_connect(dragGesture, OS.end, gestureEnd.getAddress(), this.handle);
 	return;
@@ -5643,16 +5642,14 @@ private void setDragGesture () {
 ///* TODO: Panning gesture requires a GtkOrientation object. Need to discuss what orientation should be default. */
 //}
 
-private void setRotateGesture () {
-	if(GTK.GTK4) {
+private void setRotateGesture() {
+	if (GTK.GTK4) {
 		rotateGesture = GTK4.gtk_gesture_rotate_new();
-	}else {
+	} else {
 		rotateGesture = GTK3.gtk_gesture_rotate_new(handle);
 	}
-
-	GTK.gtk_event_controller_set_propagation_phase (rotateGesture,
-	        2);
-	OS.g_signal_connect (rotateGesture, OS.angle_changed, gestureRotation.getAddress(), this.handle);
+	GTK.gtk_event_controller_set_propagation_phase(rotateGesture, 2);
+	OS.g_signal_connect(rotateGesture, OS.angle_changed, gestureRotation.getAddress(), this.handle);
 	OS.g_signal_connect(rotateGesture, OS.begin, gestureBegin.getAddress(), this.handle);
 	OS.g_signal_connect(rotateGesture, OS.end, gestureEnd.getAddress(), this.handle);
 	return;
