@@ -75,7 +75,7 @@ ATKCFLAGS = `pkg-config --cflags atk gtk+-$(GTK_VERSION)`
 endif
 
 AWT_LFLAGS = -shared ${SWT_LFLAGS} 
-AWT_LIBS = -L$(AWT_LIB_PATH) -ljawt
+AWT_LIBS = -L"$(AWT_LIB_PATH)" -ljawt
 
 ATKLIBS = `pkg-config --libs atk` -latk-1.0 
 
@@ -91,7 +91,7 @@ GLXLIBS = -lGL -lGLU -lm
 # endif
 
 SWT_OBJECTS = swt.o c.o c_stats.o callback.o
-AWT_OBJECTS = swt_awt.o
+AWT_OBJECTS = swt_awt_win32.o
 ifeq ($(GTK_VERSION), 4.0)
 GTKX_OBJECTS = gtk4.o gtk4_stats.o gtk4_structs.o
 else
@@ -186,7 +186,7 @@ cairo_stats.o: cairo_stats.c cairo_structs.h cairo.h cairo_stats.h swt.h
 #
 # AWT lib
 #
-# make_awt:$(AWT_LIB) # TODO [win32] solve gtk/x11 vs gtk/win32 native integration
+make_awt:$(AWT_LIB)
 make_awt: 
 
 $(AWT_LIB): $(AWT_OBJECTS)

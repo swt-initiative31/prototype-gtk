@@ -145,7 +145,6 @@ public static Frame getFrame (Composite parent) {
  * @since 3.0
  */
 public static Frame new_Frame (final Composite parent) {
-	if (OS.IsWin32) SWT.error (SWT.ERROR_NOT_IMPLEMENTED);
 	if (parent == null) SWT.error (SWT.ERROR_NULL_ARGUMENT);
 	if ((parent.getStyle () & SWT.EMBEDDED) == 0) {
 		SWT.error (SWT.ERROR_INVALID_ARGUMENT);
@@ -156,7 +155,13 @@ public static Frame new_Frame (final Composite parent) {
 	 * and other JREs take a long.  To handle this binary incompatibility, use
 	 * reflection to create the embedded frame.
 	 */
-	String className = embeddedFrameClass != null ? embeddedFrameClass : "sun.awt.X11.XEmbeddedFrame";
+	String osName = System.getProperty ("os.name");
+	String className=null;
+	if (osName.equals ("Linux")) {
+	 className = embeddedFrameClass != null ? embeddedFrameClass : "sun.awt.X11.XEmbeddedFrame";
+	}else if (osName.startsWith("Windows")) {
+		className=embeddedFrameClass != null ? embeddedFrameClass : "sun.awt.windows.WEmbeddedFrame";
+	}
 	try {
 		if (embeddedFrameClass != null) {
 			Class.forName(className);
