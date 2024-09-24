@@ -2714,5 +2714,161 @@ void notifyDisposalTracker() {
 		WidgetSpy.getInstance().widgetDisposed(this);
 	}
 }
+/**
+ * On Windows, keyboard layout translates a key press twice:
+ * <ol>
+ * <li>First translation is made from "scan code" (can be thought of
+ * as geometrical location of key on keyboard) to "virtual key"
+ * (can be thought of as a key meaning on latin keyboard). This
+ * happens even for layouts that have no latin keys (Bulgarian,
+ * Hebrew, Japanese, etc).</li>
+ * <li>Second translation is made from "virtual key" to character(s).
+ * A virtual key can produce zero chars (dead keys), one char
+ * (usual keys), or more than one char (ligatures).</li>
+ * </ol>
+ *
+ * Such two-step translation allows to answer both which character
+ * to produce, and which keyboard shortcut to invoke in app.
+ *
+ * Let's see some examples:<br>
+ * <table>
+ *  <tr><th>Layout</th><th>Key row</th><th>Key col</th><th>Scan code</th><th>Virt key</th><th>Character</th></tr>
+ *  <tr><td>English US    </td><td>3</td><td>5</td><td>0x13</td><td>VK_R</td><td>r</td></tr>
+ *  <tr><td>English US    </td><td>3</td><td>6</td><td>0x14</td><td>VK_T</td><td>t</td></tr>
+ *  <tr><td>English Dvorak</td><td>3</td><td>5</td><td>0x13</td><td>VK_P</td><td>p</td></tr>
+ *  <tr><td>English Dvorak</td><td>3</td><td>6</td><td>0x14</td><td>VK_Y</td><td>y</td></tr>
+ *  <tr><td>Bulgarian     </td><td>3</td><td>5</td><td>0x13</td><td>VK_R</td><td>и</td></tr>
+ *  <tr><td>Bulgarian     </td><td>3</td><td>6</td><td>0x14</td><td>VK_T</td><td>ш</td></tr>
+ * </table><br>
+ * In these examples, it can be seen how
+ * <ul>
+ *  <li>Same physical key always has the same scan code</li>
+ *  <li>Same physical key can produce different characters (that's
+ *   what keyboard layouts are for)</li>
+ *  <li>Same physical key can produce different virtual keys
+ *   (see English US, Dvorak)</li>
+ *  <li>Same virtual key can produce different characters (see
+ *   English, Bulgarian). Bulgarian only has cyrillic characters
+ *   and no latin ones, but still has standard virtual keys.</li>
+ * </ul>
+ *
+ * Note that it's valid for a "latin" virtual key to produce some
+ * other latin character. For example, VK_C could produce latin J.
+ * This can be used in Dvorak-QWERTY keyboard layout that types
+ * Dvorak, but has QWERTY keyboard shortcuts.
+ * <br>
+ * Due to two-step translation, almost every common keyboard layout
+ * has virtual keys VK_A ... VK_Z mapped on it, even if layout
+ * doesn't type a single latin character. On Windows, keyboard
+ * shortcuts bind to virtual keys. Therefore:
+ * <ul>
+ * <li>In English US, Ctrl+C will be produced by Ctrl and key labeled 'C'.</li>
+ * <li>In Dvorak, Ctrl+C will be produced by Ctrl and key labeled 'C'.
+ *  Note that Dvorak 'C' is where English US 'I' is.</li>
+ * <li>In Bulgarian, Ctrl+C will be produced by Ctrl and key labeled 'Ъ'.
+ *  Because this is the key to which VK_C is mapped.</li>
+ * </ul>
+ */
+boolean setKeyState (Event event, int type, long wParam, long lParam) {
 
+	/*
+	* Feature in Windows.  When the user presses Ctrl+Backspace
+	* or Ctrl+Enter, Windows sends a WM_CHAR with Delete (0x7F)
+	* and '\n' instead of '\b' and '\r'.  This is the correct
+	* platform behavior but is not portable.  The fix is to detect
+	* these cases and convert the character.
+	*/
+	switch (display.lastAscii) {
+		case SWT.DEL:
+			if (display.lastKey == SWT.BS) display.lastAscii = SWT.BS;
+			break;
+		case SWT.LF:
+			if (display.lastKey == SWT.CR) display.lastAscii = SWT.CR;
+			break;
+	}
+
+	/*
+	* Feature in Windows.  When the user presses either the Enter
+	* key or the numeric keypad Enter key, Windows sends a WM_KEYDOWN
+	* with wParam=VK_RETURN in both cases.  In order to distinguish
+	* between the keys, the extended key bit is tested. If the bit
+	* is set, assume that the numeric keypad Enter was pressed.
+	*/
+	if (display.lastKey == SWT.CR && display.lastAscii == SWT.CR) {
+		if ((lParam & 0x1000000) != 0) display.lastKey = SWT.KEYPAD_CR;
+	}
+
+	setLocationMask(event, type, wParam, lParam);
+
+	if (display.lastVirtual) {
+		/*
+		* Feature in Windows.  The virtual key VK_DELETE is not
+		* treated as both a virtual key and an ASCII key by Windows.
+		* Therefore, we will not receive a WM_CHAR for this key.
+		* The fix is to treat VK_DELETE as a special case and map
+		* the ASCII value explicitly (Delete is 0x7F).
+		*/
+		if (display.lastKey == OS.VK_DELETE) display.lastAscii = 0x7F;
+
+		/*
+		* Feature in Windows.  When the user presses Ctrl+Pause, the
+		* VK_CANCEL key is generated and a WM_CHAR is sent with 0x03,
+		* possibly to allow an application to look for Ctrl+C and the
+		* the Break key at the same time.  This is unexpected and
+		* unwanted.  The fix is to detect the case and set the character
+		* to zero.
+		*/
+		if (display.lastKey == OS.VK_CANCEL) display.lastAscii = 0x0;
+
+		event.keyCode = Display.translateKey (display.lastKey);
+	} else {
+		event.keyCode = display.lastKey;
+	}
+	event.character = (char) display.lastAscii;
+	if (event.keyCode == 0 && event.character == 0) {
+		return false;
+	}
+	return setInputState (event, type);
+}
+int setLocationMask (Event event, int type, long wParam, long lParam) {
+	int location = SWT.NONE;
+	if (display.lastVirtual) {
+		switch (display.lastKey) {
+			case OS.VK_SHIFT:
+				if (OS.GetKeyState(OS.VK_LSHIFT) < 0) location = SWT.LEFT;
+				if (OS.GetKeyState(OS.VK_RSHIFT) < 0) location = SWT.RIGHT;
+				break;
+			case OS.VK_NUMLOCK:
+				location = SWT.KEYPAD;
+				break;
+			case OS.VK_CONTROL:
+			case OS.VK_MENU:
+				location = (lParam & 0x1000000) == 0 ? SWT.LEFT : SWT.RIGHT;
+				break;
+			case OS.VK_INSERT:
+			case OS.VK_DELETE:
+			case OS.VK_HOME:
+			case OS.VK_END:
+			case OS.VK_PRIOR:
+			case OS.VK_NEXT:
+			case OS.VK_UP:
+			case OS.VK_DOWN:
+			case OS.VK_LEFT:
+			case OS.VK_RIGHT:
+				if ((lParam & 0x1000000) == 0) {
+					location = SWT.KEYPAD;
+				}
+				break;
+		}
+		if (display.numpadKey(display.lastKey) != 0) {
+			location = SWT.KEYPAD;
+		}
+	} else {
+		if (display.lastKey == SWT.KEYPAD_CR) {
+			location = SWT.KEYPAD;
+		}
+	}
+	event.keyLocation = location;
+	return location;
+}
 }

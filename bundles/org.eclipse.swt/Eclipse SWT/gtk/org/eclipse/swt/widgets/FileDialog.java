@@ -369,13 +369,16 @@ public Optional<String> openDialog () {
  * requires such access. These are be handled by the GtkNativeDialog API.
  *
  * @return an Optional that contains a string describing the absolute path of the first selected file
- *         or is empty if the dialog is canceled 
+ *         or is empty if the dialog is canceled
  */
 Optional<String> openNativeChooserDialog () {
 	byte [] titleBytes = Converter.wcsToMbcs (title, true);
 	int action = (style & SWT.SAVE) != 0 ? GTK.GTK_FILE_CHOOSER_ACTION_SAVE : GTK.GTK_FILE_CHOOSER_ACTION_OPEN;
 	long shellHandle = parent.topHandle();
 	Display display = parent != null ? parent.getDisplay (): Display.getCurrent();
+
+	handle=GTK.gtk_file_filter_new();
+	handle=GTK.gtk_accel_group_new();
 	handle = GTK.gtk_file_chooser_native_new(titleBytes, shellHandle, action, null, null);
 	if (handle == 0) error (SWT.ERROR_NO_HANDLES);
 
@@ -406,7 +409,7 @@ Optional<String> openNativeChooserDialog () {
 	if ((style & SWT.RIGHT_TO_LEFT) != 0) {
 		OS.g_signal_remove_emission_hook (signalId, hookId);
 	}
-	
+
 	Optional<String> result = Optional.empty();
 	if (response == GTK.GTK_RESPONSE_ACCEPT) {
 		result = Optional.ofNullable(computeResultChooserDialog ());

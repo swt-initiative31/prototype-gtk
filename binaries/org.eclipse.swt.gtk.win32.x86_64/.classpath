@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="src" path="Eclipse SWT/gtk"/>
 	<classpathentry kind="src" path="Eclipse SWT/cairo"/>
 	<classpathentry kind="src" path="Eclipse SWT/emulated/bidi"/>
 	<classpathentry kind="src" path="Eclipse SWT/emulated/coolbar"/>
-    <classpathentry kind="src" path="Eclipse SWT/emulated/taskbar"/>
+	<classpathentry kind="src" path="Eclipse SWT/emulated/taskbar"/>
 	<classpathentry kind="src" path="Eclipse SWT/common"/>
 	<classpathentry kind="src" path="Eclipse SWT PI/gtk">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="org.eclipse.swt.gtk.win32.x86_64"/>
-			<!-- ALTERNATIVE: attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="org.eclipse.swt.gtk.${env_var:osgi.os}.x86_64"/> -->
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="Eclipse SWT PI/cairo"/>
@@ -29,8 +32,14 @@
 	<classpathentry kind="src" path="Eclipse SWT Browser/common"/>
 	<classpathentry kind="src" path="Eclipse SWT Browser/gtk"/>
 	<classpathentry kind="src" path="Eclipse SWT OpenGL/gtk"/>
-	<classpathentry kind="src" path="Eclipse SWT OpenGL/glx"/> <!-- TODO [win32] not available; OpenGL/gtk depends -->
+	<classpathentry kind="src" path="Eclipse SWT OpenGL/glx"/>
 	<classpathentry kind="src" path="Eclipse SWT OpenGL/common"/>
-	<classpathentry kind="src" path="Eclipse SWT WebKit/gtk"/> <!-- TODO [win32] not available; browser common depends -->
+	<classpathentry kind="src" path="Eclipse SWT WebKit/gtk"/>
+	<classpathentry kind="src" path="Eclipse SWT OLE Win32/gtk"/>
+	<classpathentry kind="lib" path="jna-5.8.0.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

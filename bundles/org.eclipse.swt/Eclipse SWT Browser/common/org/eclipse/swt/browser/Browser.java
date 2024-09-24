@@ -88,11 +88,11 @@ public Browser (Composite parent, int style) {
 	userStyle = style;
 
 	String platform = SWT.getPlatform ();
-	if ("gtk".equals (platform)) { //$NON-NLS-1$
-		parent.getDisplay ().setData (NO_INPUT_METHOD, null);
-	}
-
-	style = getStyle ();
+//	if ("gtk".equals (platform)) { //$NON-NLS-1$
+//		parent.getDisplay ().setData (NO_INPUT_METHOD, null);
+//	}
+//50593792
+	//style = getStyle ();
 	webBrowser = new BrowserFactory ().createWebBrowser (style);
 	if (webBrowser != null) {
 		webBrowser.setBrowser (this);

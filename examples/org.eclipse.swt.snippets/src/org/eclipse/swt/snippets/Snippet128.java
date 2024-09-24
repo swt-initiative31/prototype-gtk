@@ -62,7 +62,7 @@ public class Snippet128 {
 
 		final Browser browser;
 		try {
-			browser = new Browser(shell, SWT.NONE);
+			browser = new Browser(shell, SWT.EDGE);
 		} catch (SWTError e) {
 			System.out.println("Could not instantiate Browser: " + e.getMessage());
 			display.dispose();

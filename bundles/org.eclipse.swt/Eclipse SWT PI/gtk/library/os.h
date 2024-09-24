@@ -39,7 +39,7 @@
 #include <dlfcn.h>
 #include <gtk/gtkunixprint.h>
 #else
-#include <windows.h>
+#include "windows_headers.h"
 //#define NO_realpath // TODO [win32] use GetFullPathName instead; 
 
 #define NO_gtk_1enumerate_1printers

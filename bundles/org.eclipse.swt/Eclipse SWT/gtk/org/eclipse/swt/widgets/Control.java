@@ -25,6 +25,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk.win32.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 
@@ -5626,7 +5627,11 @@ boolean mustBeVisibleOnInitBounds() {
  * TODO currently phase is set to BUBBLE = 2. Look into using groups perhaps.
  */
 private void setDragGesture () {
-	dragGesture = GTK.gtk_gesture_drag_new (handle);
+	if (GTK.GTK4) {
+		dragGesture = GTK4.gtk_gesture_drag_new ();
+	}else {
+		dragGesture = GTK3.gtk_gesture_drag_new (handle);
+	}
 	GTK.gtk_event_controller_set_propagation_phase (dragGesture,
 	        2);
 	GTK.gtk_gesture_single_set_button (dragGesture, 0);
@@ -5640,7 +5645,12 @@ private void setDragGesture () {
 //}
 
 private void setRotateGesture () {
-	rotateGesture = GTK.gtk_gesture_rotate_new(handle);
+	if(GTK.GTK4) {
+		rotateGesture = GTK4.gtk_gesture_rotate_new();
+	}else {
+		rotateGesture = GTK3.gtk_gesture_rotate_new(handle);
+	}
+
 	GTK.gtk_event_controller_set_propagation_phase (rotateGesture,
 	        2);
 	OS.g_signal_connect (rotateGesture, OS.angle_changed, gestureRotation.getAddress(), this.handle);
@@ -5649,10 +5659,13 @@ private void setRotateGesture () {
 	return;
 }
 
-private void setZoomGesture () {
-	zoomGesture = GTK.gtk_gesture_zoom_new(handle);
-	GTK.gtk_event_controller_set_propagation_phase (zoomGesture,
-	        2);
+private void setZoomGesture() {
+	if (GTK.GTK4) {
+		zoomGesture = GTK4.gtk_gesture_zoom_new();
+	} else {
+		zoomGesture = GTK3.gtk_gesture_zoom_new(handle);
+	}
+	GTK.gtk_event_controller_set_propagation_phase(zoomGesture, 2);
 	OS.g_signal_connect(zoomGesture, OS.scale_changed, gestureZoom.getAddress(), this.handle);
 	OS.g_signal_connect(zoomGesture, OS.begin, gestureBegin.getAddress(), this.handle);
 	OS.g_signal_connect(zoomGesture, OS.end, gestureEnd.getAddress(), this.handle);
@@ -6437,6 +6450,10 @@ public boolean traverse (int traversal, KeyEvent event) {
 	return traverse (traversal, event.character, event.keyCode, event.keyLocation, event.stateMask, event.doit);
 }
 
+boolean translateAccelerator (MSG msg) {
+	return menuShell ().translateAccelerator (msg);
+}
+
 boolean traverse (int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit) {
 	if (traversal == SWT.TRAVERSE_NONE) {
 		switch (keyCode) {
@@ -6860,5 +6877,147 @@ Point getSurfaceOrigin () {
 	boolean success = GTK4.gtk_widget_translate_coordinates(fixedHandle, getShell().shellHandle, 0, 0, originX, originY);
 
 	return success ? new Point((int)originX[0], (int)originY[0]) : new Point(0, 0);
+}
+
+public boolean translateTraversal(MSG msg) {
+
+	long hwnd = msg.hwnd;
+	int key = (int)msg.wParam;
+	if (key == OS.VK_MENU) {
+		if ((msg.lParam & 0x40000000) == 0) {
+			OS.SendMessage (hwnd, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
+		}
+		return false;
+	}
+	int detail = SWT.TRAVERSE_NONE;
+	boolean doit = true, all = false;
+	boolean lastVirtual = false;
+	int lastKey = key, lastAscii = 0;
+	switch (key) {
+		case OS.VK_ESCAPE: {
+			all = true;
+			lastAscii = 27;
+			long code = OS.SendMessage (hwnd, OS.WM_GETDLGCODE, 0, 0);
+			if ((code & OS.DLGC_WANTALLKEYS) != 0) {
+				/*
+				* Use DLGC_HASSETSEL to determine that the control
+				* is a text widget.  A text widget normally wants
+				* all keys except VK_ESCAPE.  If this bit is not
+				* set, then assume the control wants all keys,
+				* including VK_ESCAPE.
+				*/
+				if ((code & OS.DLGC_HASSETSEL) == 0) doit = false;
+			}
+			detail = SWT.TRAVERSE_ESCAPE;
+			break;
+		}
+		case OS.VK_RETURN: {
+			all = true;
+			lastAscii = '\r';
+			long code = OS.SendMessage (hwnd, OS.WM_GETDLGCODE, 0, 0);
+			if ((code & OS.DLGC_WANTALLKEYS) != 0) doit = false;
+			detail = SWT.TRAVERSE_RETURN;
+			break;
+		}
+		case OS.VK_TAB: {
+			lastAscii = '\t';
+			boolean next = OS.GetKeyState (OS.VK_SHIFT) >= 0;
+			long code = OS.SendMessage (hwnd, OS.WM_GETDLGCODE, 0, 0);
+			if ((code & (OS.DLGC_WANTTAB | OS.DLGC_WANTALLKEYS)) != 0) {
+				/*
+				* Use DLGC_HASSETSEL to determine that the control is a
+				* text widget.  If the control is a text widget, then
+				* Ctrl+Tab and Shift+Tab should traverse out of the widget.
+				* If the control is not a text widget, the correct behavior
+				* is to give every character, including Tab, Ctrl+Tab and
+				* Shift+Tab to the control.
+				*/
+				if ((code & OS.DLGC_HASSETSEL) != 0) {
+					if (next && OS.GetKeyState (OS.VK_CONTROL) >= 0) {
+						doit = false;
+					}
+				} else {
+					doit = false;
+				}
+			}
+			detail = next ? SWT.TRAVERSE_TAB_NEXT : SWT.TRAVERSE_TAB_PREVIOUS;
+			break;
+		}
+		case OS.VK_UP:
+		case OS.VK_LEFT:
+		case OS.VK_DOWN:
+		case OS.VK_RIGHT: {
+			lastVirtual = true;
+			long code = OS.SendMessage (hwnd, OS.WM_GETDLGCODE, 0, 0);
+			if ((code & (OS.DLGC_WANTARROWS /*| OS.DLGC_WANTALLKEYS*/)) != 0) doit = false;
+			boolean next = key == OS.VK_DOWN || key == OS.VK_RIGHT;
+			if (parent != null && (parent.style & SWT.MIRRORED) != 0) {
+				if (key == OS.VK_LEFT || key == OS.VK_RIGHT) next = !next;
+			}
+			detail = next ? SWT.TRAVERSE_ARROW_NEXT : SWT.TRAVERSE_ARROW_PREVIOUS;
+			break;
+		}
+		case OS.VK_PRIOR:
+		case OS.VK_NEXT: {
+			all = true;
+			lastVirtual = true;
+			if (OS.GetKeyState (OS.VK_CONTROL) >= 0) return false;
+			long code = OS.SendMessage (hwnd, OS.WM_GETDLGCODE, 0, 0);
+			if ((code & OS.DLGC_WANTALLKEYS) != 0) {
+				/*
+				* Use DLGC_HASSETSEL to determine that the control is a
+				* text widget.  If the control is a text widget, then
+				* Ctrl+PgUp and Ctrl+PgDn should traverse out of the widget.
+				*/
+				if ((code & OS.DLGC_HASSETSEL) == 0) doit = false;
+			}
+			detail = key == OS.VK_PRIOR ? SWT.TRAVERSE_PAGE_PREVIOUS : SWT.TRAVERSE_PAGE_NEXT;
+			break;
+		}
+		default:
+			return false;
+	}
+	Event event = new Event ();
+	event.doit = doit;
+	event.detail = detail;
+	display.lastKey = lastKey;
+	display.lastAscii = lastAscii;
+	display.lastVirtual = lastVirtual;
+	display.lastDead = false;
+	if (!setKeyState (event, SWT.Traverse, msg.wParam, msg.lParam)) return false;
+	Shell shell = getShell ();
+	Control control = this;
+	do {
+		if (control.traverse (event)) {
+			OS.SendMessage (hwnd, OS.WM_CHANGEUISTATE, OS.UIS_INITIALIZE, 0);
+			return true;
+		}
+		if (!event.doit && control.hooks (SWT.Traverse)) return false;
+		if (control == shell) return false;
+		control = control.parent;
+	} while (all && control != null);
+	return false;
+
+}
+
+public boolean translateMnemonic(MSG msg) {
+	if (msg.wParam < 0x20) return false;
+	long hwnd = msg.hwnd;
+	if (OS.GetKeyState (OS.VK_MENU) >= 0) {
+		long code = OS.SendMessage (hwnd, OS.WM_GETDLGCODE, 0, 0);
+		if ((code & OS.DLGC_WANTALLKEYS) != 0) return false;
+		if ((code & OS.DLGC_BUTTON) == 0) return false;
+	}
+	Decorations shell = menuShell ();
+	if (shell.isVisible () && shell.isEnabled ()) {
+		display.lastAscii = (int)msg.wParam;
+		display.lastDead = false;
+		Event event = new Event ();
+		event.detail = SWT.TRAVERSE_MNEMONIC;
+		if (setKeyState (event, SWT.Traverse, msg.wParam, msg.lParam)) {
+			return translateMnemonic (event, null) || shell.translateMnemonic (event, this);
+		}
+	}
+	return false;
 }
 }
