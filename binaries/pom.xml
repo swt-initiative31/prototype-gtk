@@ -136,7 +136,7 @@
 														</exec>
 													</then>
 													<else>
-														<property name="gtk_version" value="3.0" />
+														<property name="gtk_version" value="4.0" />
 														<exec dir="${build_dir}" executable="sh" failonerror="true">
 															<arg line="build.sh"/>
 															<env key="SWT_JAVA_HOME" value="${SWT_JAVA_HOME}"/>
