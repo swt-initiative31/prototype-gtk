@@ -35,8 +35,42 @@
 #include <locale.h>
 #include <unistd.h>
 
+#ifndef _WIN32
 #include <dlfcn.h>
 #include <gtk/gtkunixprint.h>
+#else
+#include "windows_headers.h"
+//#define NO_realpath // TODO [win32] use GetFullPathName instead; 
+
+#define NO_gtk_1enumerate_1printers
+#define NO_gtk_1printer_1get_1name
+#define NO_gtk_1printer_1is_1default
+#define NO_gtk_1print_1job_1get_1surface
+#define NO_gtk_1print_1unix_1dialog_1get_1current_1page
+#define NO_gtk_1print_1unix_1dialog_1get_1selected_1printer
+#define NO_gtk_1print_1unix_1dialog_1get_1settings
+#define NO_gtk_1print_1unix_1dialog_1set_1settings
+#define NO_gtk_1print_1unix_1dialog_1get_1page_1setup
+#define NO_gtk_1print_1unix_1dialog_1set_1page_1setup
+#define NO_gtk_1printer_1get_1backend
+#define NO_gtk_1print_1unix_1dialog_1new
+#define NO_gtk_1print_1job_1new
+#define NO_gtk_1print_1job_1send
+#define NO_gtk_1print_1unix_1dialog_1set_1current_1page
+#define NO_gtk_1print_1unix_1dialog_1set_1embed_1page_1setup
+#define NO_gtk_1print_1unix_1dialog_1set_1manual_1capabilities
+
+// added 2024-02
+#define NO_gtk_1print_1unix_1dialog_1set_1has_1selection
+#define NO_gtk_1print_1unix_1dialog_1set_1support_1selection
+#define NO_gdk_1x11_1surface_1get_1xid
+#define NO_gdk_1x11_1surface_1lookup_1for_1display
+#define NO_XAnyEvent
+
+// map realpath to a similar function in win32
+#define realpath(N,R) _fullpath((R),(N),_MAX_PATH)
+#endif
+
 
 #define OS_LOAD_FUNCTION LOAD_FUNCTION
 
@@ -45,6 +79,16 @@
 // Hard-link code generated from GDK.java to LIB_GDK
 #define GDK_LOAD_FUNCTION(var, name) LOAD_FUNCTION_LIB(var, LIB_GDK, name)
 
+#ifdef _WIN32
+#define LOAD_FUNCTION_LIB(var, libname, name) \
+		static int initialized = 0; \
+		static FARPROC var = NULL; \
+		if (!initialized) { \
+			HMODULE hm = LoadLibrary(libname); \
+			if (hm) var = GetProcAddress(hm, #name); \
+			initialized = 1; \
+		}
+#else
 #define LOAD_FUNCTION_LIB(var, libname, name) \
 		static int initialized = 0; \
 		static void *var = NULL; \
@@ -54,6 +98,8 @@
 			initialized = 1; \
 	                CHECK_DLERROR \
 		}
+#endif
+
 
 #if defined(GDK_WINDOWING_X11)
 #if !GTK_CHECK_VERSION(4,0,0)

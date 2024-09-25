@@ -141,4 +141,5 @@ public static final native long memset (long buffer, int c, long num);
 public static final native int PTR_sizeof ();
 /** @param s cast=(char *) */
 public static final native int strlen (long s);
+
 }

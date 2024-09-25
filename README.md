@@ -1,125 +1,76 @@
-[![SWT Matrix Build](https://github.com/eclipse-platform/eclipse.platform.swt/actions/workflows/maven.yml/badge.svg)](https://github.com/eclipse-platform/eclipse.platform.swt/actions/workflows/maven.yml) ![SWT Matrix Tests](https://gist.githubusercontent.com/eclipse-releng-bot/78d110a601baa4ef777ccb472f584038/raw/71510599eb84e852f3e135aa7a3ddf33854ca716/badge.svg)
+# Using SWT with GTK on Windows
 
-# About
+This branch prototypes the usage of GTK for rendering SWT on Windows. It is based on work done some years ago: https://bugs.eclipse.org/bugs/show_bug.cgi?id=488431
 
-SWT is a cross-platform GUI library for JVM based desktop applications.
-The best known SWT-based application is [Eclipse](https://www.eclipse.org).
+![alt text](gtk-on-windows-example.png)
 
-## Getting Started
+## Installing GTK on Windows
 
-SWT comes with platform-specific jar files.
-Download them from https://download.eclipse.org/eclipse/downloads/index.html and add the jar file to your classpath.
+To provide GTK on Windows, you best follow the official GTK documentation: https://www.gtk.org/docs/installations/windows
 
-### Example
-![Example](example.png)
-```java
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+The tests I have made based on this branch are using the MSYS2-based setup of GTK, which works fine.
 
-public class HelloWorld {
+1. Install MSYS2: https://msys2.github.io/
+2. Update MSYS2:
+     ``` 
+     pacman -Syuu
+     ``` 
+3. Install GTK 3/4 via the MSYS shell:
+      ```
+      pacman -S mingw-w64-x86_64-gtk3
+      pacman -S mingw-w64-x86_64-gtk4
+      ```
+4. Add the libraries installed via MSYS to your `PATH`. E.g., when using the default MSYS installation directory `C:\msys64`, the `PATH` entry should be: `C:\msys64\mingw64\bin`
+5. _Optional:_ If you want to or need to compile the SWT binaries, you should istall:
+      ```
+      pacman -S mingw-w64-x86_64-toolchain
+      ```
+  
+## Using GTK on Windows
+For GTK on Windows, there is a new SWT fragment project in the `binaries` folder: `org.eclipse.swt.gtk.win32.x86_64`. Be aware that it is currently integrated via some tweaks, e.g., the misuse of the specified window system to ensure that GTK fragment is used on Windows even though a Win32 window system is present and to _not_ use the original Windows fragment.
 
-	public static void main(String[] args) {
-		final Display display = new Display();
+Steps to use:
+* Have an ordinary Eclipse SDK workspace with SWT.
+* Checkout this branch and, if necessary, rebase it onto your used SWT state.
+* Import the `org.eclipse.swt.gtk.win32.x86_64` fragment into your Eclipse workspace.
+* In case you do not use the state of SWT as provided in the `gtk-on-windows` branch, you need to generate the binaries (see below).
+* Start some product (for example the `org.eclipse.sdk.ide` product) using SWT and make sure that your launch configuration uses the GTK instead of the Win32 SWT fragment and that the Win32-specific UI fragments are not enabled.
+  * The following should _not_ be enabled:
+    * `org.eclipse.swt.win32.win32.x86_64`
+    * `org.eclipse.compare.win32`
+    * `org.eclipse.e4.ui.swt.win32`
+    * `org.eclipse.ui.win32`
+  * The following should be enabled instead:
+    * `org.eclipse.swt.gtk.win32.x86_64`
 
-		final Shell shell = new Shell(display);
-		shell.setText("Hello World");
-		shell.setLayout(new GridLayout(2, false));
+![alt text](gtk-on-windows-application.png)
 
-		final Label label = new Label(shell, SWT.LEFT);
-		label.setText("Your &Name:");
-		label.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+![alt text](gtk-on-windows-plugins.png)
 
-		final Text text = new Text(shell, SWT.BORDER | SWT.SINGLE);
-		final GridData data = new GridData(SWT.FILL, SWT.CENTER, true, false);
-		data.minimumWidth = 120;
-		text.setLayoutData(data);
 
-		final Button button = new Button(shell, SWT.PUSH);
-		button.setText("Say Hello");
-		shell.setDefaultButton(button);
-		button.setLayoutData(new GridData(SWT.END, SWT.CENTER, false, false, 2, 1));
+### Building the binaries
+* Start a Maven build for the SWT repository by calling `mvn clean compile` in the root folder. This will currently not succeeds but will at least generate some metadata for the binaries generation.
+* Run the following command in the `binares/org.eclipse.swt.gtk.win32.x86_64` folder:
+  ```
+  mvn clean process-resources -Dnative=gtk.win32.x86_64 -Dws=gtk -Dos=win32 -Darch=x86_64 -DskipTests
+  ``` 
+  
+  This should generate the binaries, i.e, in the `build-native-binaries` phase, it should execute the batch script running the C++ compiler and the copy the generated *.dll files to the project folder.
 
-		final Label output = new Label(shell, SWT.CENTER);
-		output.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+Note that this currently only builds GTK3 binaries and does not allow to use GTK4 yet. However, it's only because the latter has not been tried out and might be easy to achieve.
 
-		button.addListener(SWT.Selection, event -> {
-			String name = text.getText().trim();
-			if (name.length() == 0) {
-				name = "world";
-			}
-			output.setText("Hello " + name + "!");
-		});
 
-		shell.setSize(shell.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-		shell.open();
+## Limitations and Workarounds
 
-		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch()) {
-				display.sleep();
-			}
-		}
+Some limitations of the GTK on Windows usage for SWT have been documented in the original issue: https://bugs.eclipse.org/bugs/show_bug.cgi?id=488431
 
-		display.dispose();
-	}
-}
-```
-First, a `Display` is created which is something like the central place of all GUI-related code.
-Then a `Shell` is created which in our example is a top-level window.
-Then all child controls and listeners are created, including their layout information.
-Finally, we set the window's size determines by its child controls and open the window.
-The `while`-loop processes all GUI related events until the shell is disposed which happens when closing.
-Before exiting, any claimed GUI resources needs to be freed.
+There are two further tweaks currently applied in this branch:
+* Images used by TreeItems are not accessed properly. They are stored in an image map of the item's Tree, but not retrieved properly. In this branch, a patch is applied that simply stored the proper image surface within each TreeItem.
+* A specific shell constructor is currently not working, making the splash screen creation fail. In this branch, a patch is applied that simply creates a new shell for the splash instead of used a passed handle.
 
-Contributing to SWT
-===================
+When using SWT with the Eclipse Platform, note that the Win32-specific bundles can currently not be used and have to be removed from launch configurations:
+* `org.eclipse.compare.win32`
+* `org.eclipse.e4.ui.swt.win32`
+* `org.eclipse.ui.win32`
 
-Thanks for your interest in this project.
-
-See https://github.com/eclipse-platform/.github/blob/main/CONTRIBUTING.md for contributing to Eclipse Platform in general.
-
-Developer resources:
---------------------
-
-See the following description for how to contribute a feature or a bug fix to SWT.
-
-- <https://www.eclipse.org/swt/fixbugs.php>
-
-Information regarding source code management, builds, coding standards, and more and be found under the following link.
-
-- <https://projects.eclipse.org/projects/eclipse.platform.swt/developer>
-
-Contributor License Agreement:
-------------------------------
-
-Before your contribution can be accepted by the project, you need to create and electronically sign the Eclipse Foundation Contributor License Agreement (CLA).
-
-- <http://www.eclipse.org/legal/CLA.php>
-
-Contact:
---------
-
-Contact the project developers via the project's "dev" list.
-
-- <https://accounts.eclipse.org/mailing-list/platform-dev>
-
-Search for bugs:
-----------------
-
-SWT used to track ongoing development and issues in Bugzilla .
-
-- <https://bugs.eclipse.org/bugs/buglist.cgi?product=Platform&component=SWT>
-
-Create a new bug:
------------------
-
-You can register bugs and feature requests in the Github Issue Tracker. Remember that contributions are always welcome!
-- [View existing SWT issues](https://github.com/eclipse-platform/eclipse.platform.swt/issues)
-- [New SWT issue](https://github.com/eclipse-platform/eclipse.platform.swt/issues/new)
-
-Please bear in mind that this project is almost entirely developed by volunteers. If you do not provide the implementation yourself (or pay someone to do it for you), the bug might never get fixed. If it is a serious bug, other people than you might care enough to provide a fix.
+They may need to or can be replaced by GTK-specific bundles, but no work has been done on that yet.

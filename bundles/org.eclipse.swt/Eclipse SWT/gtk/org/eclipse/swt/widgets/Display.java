@@ -32,6 +32,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.GDBus.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk.win32.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 
@@ -1120,7 +1121,7 @@ public void close () {
 @Override
 protected void create (DeviceData data) {
 	checkSubclass ();
-	checkDisplay(thread = Thread.currentThread (), false);
+	checkDisplay(thread = Thread.currentThread (), true);
 	createDisplay (data);
 	register (this);
 	if (Default == null) Default = this;
@@ -1186,7 +1187,7 @@ void createDisplay (DeviceData data) {
 		 * To allow them to be created on the main thread, GDK lock has to be reentrant.
 		 * This call replaces the standard GDK lock (GMutex) with GRecMutex.
 		 */
-		OS.swt_set_lock_functions ();
+		GTK3.swt_set_lock_functions ();
 		GDK.gdk_threads_init ();
 		GDK.gdk_threads_enter ();
 	}
@@ -2604,6 +2605,9 @@ Dialog getModalDialog () {
  * windows.  See http://freedesktop.org/Standards/wm-spec.
  */
 Rectangle getWorkArea() {
+	if (OS.IsWin32) {
+		return null;
+	}
 	byte[] name = Converter.wcsToMbcs ("_NET_WORKAREA", true); //$NON-NLS-1$
 	long atom = GDK.gdk_atom_intern (name, true);
 	if (atom == GDK.GDK_NONE) return null;
@@ -3790,11 +3794,13 @@ void initializeSubclasses () {
 		OS.G_OBJECT_CLASS_SET_CONSTRUCTOR (pangoFontFaceClass, OS.pangoFontFaceNewProc_CALLBACK(pangoFontFaceNewProc));
 		OS.g_type_class_unref (pangoFontFaceClass);
 
-		long printerOptionWidgetType = GTK.gtk_printer_option_widget_get_type();
-		long printerOptionWidgetClass = OS.g_type_class_ref (printerOptionWidgetType);
-		printerOptionWidgetNewProc = OS.G_OBJECT_CLASS_CONSTRUCTOR (printerOptionWidgetClass);
-		OS.G_OBJECT_CLASS_SET_CONSTRUCTOR (printerOptionWidgetClass, OS.printerOptionWidgetNewProc_CALLBACK(printerOptionWidgetNewProc));
-		OS.g_type_class_unref (printerOptionWidgetClass);
+		if (!OS.IsWin32) { /* TODO [win32] replace unixprint */
+			long printerOptionWidgetType = GTK.gtk_printer_option_widget_get_type();
+			long printerOptionWidgetClass = OS.g_type_class_ref (printerOptionWidgetType);
+			printerOptionWidgetNewProc = OS.G_OBJECT_CLASS_CONSTRUCTOR (printerOptionWidgetClass);
+			OS.G_OBJECT_CLASS_SET_CONSTRUCTOR (printerOptionWidgetClass, OS.printerOptionWidgetNewProc_CALLBACK(printerOptionWidgetNewProc));
+			OS.g_type_class_unref (printerOptionWidgetClass);
+		}
 	}
 }
 
@@ -4520,6 +4526,173 @@ public boolean readAndDispatch () {
 	return isDisposed () || runAsyncMessages (false);
 }
 
+public MSG msg = new MSG ();
+int lastKey,  lastAscii;
+boolean lastVirtual, lastDead;
+
+//boolean filterMessage (MSG msg) {
+//	int message = msg.message;
+//	if (OS.WM_KEYFIRST <= message && message <= OS.WM_KEYLAST) {
+//		Control control = findControl (msg.hwnd);
+//		if (control != null) {
+//			if (translateAccelerator (msg, control) || translateMnemonic (msg, control) || translateTraversal (msg, control)) {
+//				lastAscii = lastKey = 0;
+//				lastVirtual = lastDead = false;
+//				return true;
+//			}
+//		}
+//	}
+//	return false;
+//}
+//boolean translateAccelerator (MSG msg, Control control) {
+//	accelKeyHit = true;
+//	boolean result = control.translateAccelerator (msg);
+//	accelKeyHit = false;
+//	return result;
+//}
+
+//boolean translateMnemonic (MSG msg, Control control) {
+//	switch (msg.message) {
+//		case OS.WM_CHAR:
+//		case OS.WM_SYSCHAR:
+//			return control.translateMnemonic (msg);
+//	}
+//	return false;
+//}
+
+//boolean translateTraversal (MSG msg, Control control) {
+//	switch (msg.message) {
+//		case OS.WM_KEYDOWN:
+//			switch ((int)msg.wParam) {
+//				case OS.VK_RETURN:
+//				case OS.VK_ESCAPE:
+//				case OS.VK_TAB:
+//				case OS.VK_UP:
+//				case OS.VK_DOWN:
+//				case OS.VK_LEFT:
+//				case OS.VK_RIGHT:
+//				case OS.VK_PRIOR:
+//				case OS.VK_NEXT:
+//					return control.translateTraversal (msg);
+//			}
+//			break;
+//		case OS.WM_SYSKEYDOWN:
+//			switch ((int)msg.wParam) {
+//				case OS.VK_MENU:
+//					return control.translateTraversal (msg);
+//			}
+//			break;
+//	}
+//	return false;
+//}
+
+/* Widget Table */
+private Map<Long, Control> controlByHandle;
+Control getControl (long handle) {
+	Control control = controlByHandle.get(handle);
+	return control;
+}
+Control findControl (long handle) {
+	if (handle == 0) return null;
+	long hwndOwner = 0;
+	do {
+		Control control = getControl (handle);
+		if (control != null) return control;
+		hwndOwner = OS.GetWindow (handle, OS.GW_OWNER);
+		handle = OS.GetParent (handle);
+	} while (handle != 0 && handle != hwndOwner);
+	return null;
+}
+public boolean readAndDispatchWindows () {
+
+	if (OS.PeekMessage (msg, 0, 0, 0, OS.PM_REMOVE)) {
+		if (!filterMessage (msg)) {
+			OS.TranslateMessage (msg);
+			OS.DispatchMessage (msg);
+		}
+		runDeferredEvents ();
+		return true;
+	}
+	return isDisposed () || runAsyncMessages (false);
+}
+boolean filterMessage (MSG msg) {
+	int message = msg.message;
+	if (OS.WM_KEYFIRST <= message && message <= OS.WM_KEYLAST) {
+		Control control = findControl (msg.hwnd);
+		if (control != null) {
+			if (translateAccelerator (msg, control) || translateMnemonic (msg, control) || translateTraversal (msg, control)) {
+				lastAscii = lastKey = 0;
+				lastVirtual = lastDead = false;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+private boolean translateTraversal(MSG msg2, Control control) {
+	switch (msg.message) {
+	case OS.WM_KEYDOWN:
+		switch ((int)msg.wParam) {
+			case OS.VK_RETURN:
+			case OS.VK_ESCAPE:
+			case OS.VK_TAB:
+			case OS.VK_UP:
+			case OS.VK_DOWN:
+			case OS.VK_LEFT:
+			case OS.VK_RIGHT:
+			case OS.VK_PRIOR:
+			case OS.VK_NEXT:
+				return control.translateTraversal (msg);
+		}
+		break;
+	case OS.WM_SYSKEYDOWN:
+		switch ((int)msg.wParam) {
+			case OS.VK_MENU:
+				return control.translateTraversal (msg);
+		}
+		break;
+}
+return false;
+}
+
+private boolean translateMnemonic(MSG msg2, Control control) {
+	switch (msg.message) {
+	case OS.WM_CHAR:
+	case OS.WM_SYSCHAR:
+		return control.translateMnemonic (msg);
+}
+return false;
+}
+boolean accelKeyHit;
+private boolean translateAccelerator(MSG msg2, Control control) {
+	accelKeyHit = true;
+	boolean result = control.translateAccelerator (msg);
+	accelKeyHit = false;
+	return result;
+}
+
+int numpadKey (int key) {
+	switch (key) {
+		case OS.VK_NUMPAD0:	return '0';
+		case OS.VK_NUMPAD1:	return '1';
+		case OS.VK_NUMPAD2:	return '2';
+		case OS.VK_NUMPAD3:	return '3';
+		case OS.VK_NUMPAD4:	return '4';
+		case OS.VK_NUMPAD5:	return '5';
+		case OS.VK_NUMPAD6:	return '6';
+		case OS.VK_NUMPAD7:	return '7';
+		case OS.VK_NUMPAD8:	return '8';
+		case OS.VK_NUMPAD9:	return '9';
+		case OS.VK_MULTIPLY:	return '*';
+		case OS.VK_ADD: 		return '+';
+		case OS.VK_SEPARATOR:	return '\0';
+		case OS.VK_SUBTRACT:	return '-';
+		case OS.VK_DECIMAL:	return '.';
+		case OS.VK_DIVIDE:		return '/';
+	}
+	return 0;
+}
 static void register (Display display) {
 	synchronized (Device.class) {
 		for (int i=0; i<Displays.length; i++) {

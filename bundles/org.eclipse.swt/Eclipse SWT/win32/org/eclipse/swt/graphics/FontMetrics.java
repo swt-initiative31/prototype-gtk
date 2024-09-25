@@ -43,6 +43,8 @@ public final class FontMetrics {
 	 */
 	public TEXTMETRIC handle;
 
+	private int nativeZoom;
+
 /**
  * Prevents instances from being created outside the package.
  */
@@ -95,7 +97,7 @@ public boolean equals (Object object) {
  * @return the ascent of the font
  */
 public int getAscent() {
-	return DPIUtil.autoScaleDown(handle.tmAscent - handle.tmInternalLeading);
+	return DPIUtil.scaleDown(handle.tmAscent - handle.tmInternalLeading, getZoom());
 }
 
 /**
@@ -118,7 +120,7 @@ public double getAverageCharacterWidth() {
  */
 @Deprecated
 public int getAverageCharWidth() {
-	return DPIUtil.autoScaleDown(handle.tmAveCharWidth);
+	return DPIUtil.scaleDown(handle.tmAveCharWidth, getZoom());
 }
 
 /**
@@ -130,7 +132,7 @@ public int getAverageCharWidth() {
  * @return the descent of the font
  */
 public int getDescent() {
-	return DPIUtil.autoScaleDown(handle.tmDescent);
+	return DPIUtil.scaleDown(handle.tmDescent, getZoom());
 }
 
 /**
@@ -145,7 +147,7 @@ public int getDescent() {
  * @see #getLeading
  */
 public int getHeight() {
-	return DPIUtil.autoScaleDown(handle.tmHeight);
+	return DPIUtil.scaleDown(handle.tmHeight, getZoom());
 }
 
 /**
@@ -170,6 +172,10 @@ public int getLeading() {
 	 * value here:
 	 */
 	return getHeight() - getAscent() - getDescent();
+}
+
+private int getZoom() {
+	return DPIUtil.getZoomForAutoscaleProperty(nativeZoom);
 }
 
 /**
@@ -204,13 +210,15 @@ public int hashCode() {
  * </p>
  *
  * @param handle the <code>TEXTMETRIC</code> containing information about a font
+ * @param nativeZoom the native zoom of the monitor for which Font Metrics is created
  * @return a new font metrics object containing the specified <code>TEXTMETRIC</code>
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-public static FontMetrics win32_new(TEXTMETRIC handle) {
+public static FontMetrics win32_new(TEXTMETRIC handle, int nativeZoom) {
 	FontMetrics fontMetrics = new FontMetrics();
 	fontMetrics.handle = handle;
+	fontMetrics.nativeZoom = nativeZoom;
 	return fontMetrics;
 }
 

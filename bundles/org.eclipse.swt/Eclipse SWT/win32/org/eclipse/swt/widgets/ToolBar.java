@@ -568,7 +568,7 @@ public ToolItem getItem (int index) {
 public ToolItem getItem (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	return getItemInPixels(DPIUtil.autoScaleUp(point));
+	return getItemInPixels(DPIUtil.autoScaleUp(point, getZoom()));
 }
 
 ToolItem getItemInPixels (Point point) {
@@ -1265,9 +1265,9 @@ void updateOrientation () {
 	super.updateOrientation ();
 	if (imageList != null) {
 		Point size = imageList.getImageSize ();
-		ImageList newImageList = display.getImageListToolBar (style & SWT.RIGHT_TO_LEFT, size.x, size.y);
-		ImageList newHotImageList = display.getImageListToolBarHot (style & SWT.RIGHT_TO_LEFT, size.x, size.y);
-		ImageList newDisabledImageList = display.getImageListToolBarDisabled (style & SWT.RIGHT_TO_LEFT, size.x, size.y);
+		ImageList newImageList = display.getImageListToolBar (style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
+		ImageList newHotImageList = display.getImageListToolBarHot (style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
+		ImageList newDisabledImageList = display.getImageListToolBarDisabled (style & SWT.RIGHT_TO_LEFT, size.x, size.y, getZoom());
 		TBBUTTONINFO info = new TBBUTTONINFO ();
 		info.cbSize = TBBUTTONINFO.sizeof;
 		info.dwMask = OS.TBIF_IMAGE;
@@ -1642,7 +1642,8 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 				int index = (int)OS.SendMessage (handle, OS.TB_COMMANDTOINDEX, lpnmtb.iItem, 0);
 				RECT rect = new RECT ();
 				OS.SendMessage (handle, OS.TB_GETITEMRECT, index, rect);
-				event.setLocationInPixels(rect.left, rect.bottom);
+				int zoom = getZoom();
+				event.setLocation(DPIUtil.scaleDown(rect.left, zoom), DPIUtil.scaleDown(rect.bottom, zoom));
 				child.sendSelectionEvent (SWT.Selection, event, false);
 			}
 			break;

@@ -280,6 +280,7 @@ boolean fillAccel (ACCEL accel) {
 }
 
 void fixMenus (Decorations newParent) {
+	this.nativeZoom = newParent.nativeZoom;
 	if (menu != null && !menu.isDisposed() && !newParent.isDisposed()) menu.fixMenus (newParent);
 }
 
@@ -785,7 +786,7 @@ public void setImage (Image image) {
 	} else {
 		if (OS.IsAppThemed ()) {
 			if (hBitmap != 0) OS.DeleteObject (hBitmap);
-			info.hbmpItem = hBitmap = image != null ? Display.create32bitDIB (image) : 0;
+			info.hbmpItem = hBitmap = image != null ? Display.create32bitDIB (image, getZoom()) : 0;
 		} else {
 			info.hbmpItem = image != null ? OS.HBMMENU_CALLBACK : 0;
 		}
@@ -1126,7 +1127,7 @@ LRESULT wmDrawChild (long wParam, long lParam) {
 	if (image != null) {
 		GCData data = new GCData();
 		data.device = display;
-		GC gc = GC.win32_new (struct.hDC, data);
+		GC gc = createNewGC(struct.hDC, data);
 		/*
 		* Bug in Windows.  When a bitmap is included in the
 		* menu bar, the HDC seems to already include the left
@@ -1135,7 +1136,8 @@ LRESULT wmDrawChild (long wParam, long lParam) {
 		*/
 		int x = (parent.style & SWT.BAR) != 0 ? MARGIN_WIDTH * 2 : struct.left;
 		Image image = getEnabled () ? this.image : new Image (display, this.image, SWT.IMAGE_DISABLE);
-		gc.drawImage (image, DPIUtil.autoScaleDown(x), DPIUtil.autoScaleDown(struct.top + MARGIN_HEIGHT));
+		int zoom = getZoom();
+		gc.drawImage (image, DPIUtil.scaleDown(x, zoom), DPIUtil.scaleDown(struct.top + MARGIN_HEIGHT, zoom));
 		if (this.image != image) image.dispose ();
 		gc.dispose ();
 	}
@@ -1226,7 +1228,7 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	if (menuItemImage != null) {
 		Image currentImage = menuItemImage;
 		menuItem.image = null;
-		menuItem.setImage (Image.win32_new(currentImage, newZoom));
+		menuItem.setImage (currentImage);
 	}
 	// Refresh the sub menu
 	Menu subMenu = menuItem.getMenu();

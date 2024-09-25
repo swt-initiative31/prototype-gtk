@@ -13,13 +13,31 @@
  *******************************************************************************/
 package org.eclipse.swt.browser;
 
+import org.eclipse.swt.*;
+import org.eclipse.swt.internal.gtk.*;
+
 class BrowserFactory {
 
-WebBrowser createWebBrowser (int style) {
-	boolean webkitInstalled = WebKit.IsInstalled ();
-	if (!webkitInstalled) return null;
+	WebBrowser createWebBrowser(int style) {
+		if (OS.IsWin32) {
+			// This function can't throw, otherwise the Browser will be left in inconsistent
+			// state.
+			if ((style & SWT.EDGE) != 0) {
+				try {
+					return new Edge();
+				} catch (SWTError e) {
+					System.err.println(e);
+				}
+			}
+			return null;
+			//return new IE();
+		} else {
+			boolean webkitInstalled = WebKit.IsInstalled();
+			if (!webkitInstalled)
+				return null;
 
-	return new WebKit ();
-}
+			return new WebKit();
+		}
+	}
 
 }

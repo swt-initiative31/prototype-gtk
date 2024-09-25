@@ -32,12 +32,26 @@
 #define GtkTreeIter_sizeof() sizeof(GtkTreeIter)
 
 #ifdef _WIN32
+#define SCRIPT_STRING_ANALYSIS_sizeof() sizeof(SCRIPT_STRING_ANALYSIS)
+#define PROPVARIANT_sizeof() sizeof(PROPVARIANT)
+#define LOGPEN_sizeof() sizeof(LOGPEN)
+
+/* Libraries for dynamic loaded functions */
+#define GetDpiForMonitor_LIB "shcore.dll"
+#define RtlGetVersion_LIB "ntdll.dll"
+#if defined(GTK4)
+#define LIB_GTK "libgtk-4.dll"
+// Point GDK to GTK for GTK4
+#define LIB_GDK "libgtk-4.dll"
+#else
 #define LIB_GTK "libgtk-3-0.dll"
 #define LIB_GDK "libgdk-3-0.dll"
+#endif
 #define LIB_GTHREAD "libgthread-2.0-0.dll"
 #define LIB_GLIB "libglib-2.0-0.dll"
 #define LIB_ATK "libatk-1.0-0.dll"
 #define LIB_FONTCONFIG "libfontconfig-1.dll"
+#define LIB_PANGO "libpango-1.0-0.dll"
 #else
 #if defined(GTK4)
 #define LIB_GTK "libgtk-4.so.1"

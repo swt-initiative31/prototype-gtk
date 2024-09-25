@@ -412,7 +412,7 @@ int getMargin (int index) {
 	}
 	if ((style & SWT.FLAT) == 0) {
 		if (!isLastItemOfRow (index)) {
-			margin += CoolBar.SEPARATOR_WIDTH;
+			margin += DPIUtil.autoScaleUp(SEPARATOR_WIDTH, getZoom());
 		}
 	}
 	return margin;
@@ -549,7 +549,7 @@ public Point [] getItemSizes () {
 	Point [] sizes = getItemSizesInPixels();
 	if (sizes != null) {
 		for (int i = 0; i < sizes.length; i++) {
-			sizes[i] = DPIUtil.autoScaleDown(sizes[i]);
+			sizes[i] = DPIUtil.scaleDown(sizes[i], getZoom());
 		}
 	}
 	return sizes;
@@ -809,7 +809,7 @@ public void setItemLayout (int [] itemOrder, int [] wrapIndices, Point [] sizes)
 	if (sizes == null) error (SWT.ERROR_NULL_ARGUMENT);
 	Point [] sizesInPoints = new Point [sizes.length];
 	for (int i = 0; i < sizes.length; i++) {
-		sizesInPoints[i] = DPIUtil.autoScaleUp(sizes[i]);
+		sizesInPoints[i] = DPIUtil.autoScaleUp(sizes[i], getZoom());
 	}
 	setItemLayoutInPixels (itemOrder, wrapIndices, sizesInPoints);
 }
@@ -1173,10 +1173,11 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 			if (item != null) {
 				Event event = new Event();
 				event.detail = SWT.ARROW;
+				int zoom = getZoom();
 				if ((style & SWT.VERTICAL) != 0) {
-					event.setLocationInPixels(lpnm.right, lpnm.top);
+					event.setLocation(DPIUtil.scaleDown(lpnm.right, zoom), DPIUtil.scaleDown(lpnm.top, zoom));
 				} else {
-					event.setLocationInPixels(lpnm.left, lpnm.bottom);
+					event.setLocation(DPIUtil.scaleDown(lpnm.left, zoom), DPIUtil.scaleDown(lpnm.bottom, zoom));
 				}
 				item.sendSelectionEvent(SWT.Selection, event, false);
 			}

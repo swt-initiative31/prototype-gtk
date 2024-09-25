@@ -614,9 +614,10 @@ public Point computeSize (int wHint, int hHint) {
  */
 public Point computeSize (int wHint, int hHint, boolean changed){
 	checkWidget ();
-	wHint = (wHint != SWT.DEFAULT ? DPIUtil.autoScaleUp(wHint) : wHint);
-	hHint = (hHint != SWT.DEFAULT ? DPIUtil.autoScaleUp(hHint) : hHint);
-	return DPIUtil.autoScaleDown(computeSizeInPixels(wHint, hHint, changed));
+	int zoom = getZoom();
+	wHint = (wHint != SWT.DEFAULT ? DPIUtil.autoScaleUp(wHint, zoom) : wHint);
+	hHint = (hHint != SWT.DEFAULT ? DPIUtil.autoScaleUp(hHint, zoom) : hHint);
+	return DPIUtil.scaleDown(computeSizeInPixels(wHint, hHint, changed), zoom);
 }
 
 Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
@@ -679,7 +680,7 @@ void createHandle () {
 }
 
 void checkGesture () {
-	int value = OS.GetSystemMetrics (OS.SM_DIGITIZER);
+	int value =getSystemMetrics (OS.SM_DIGITIZER);
 	if ((value & (OS.NID_READY | OS.NID_MULTI_INPUT)) != 0) {
 		/*
 		 * Feature in Windows 7: All gestures are enabled by default except GID_ROTATE.
@@ -717,7 +718,7 @@ int defaultBackground () {
 }
 
 long defaultFont() {
-	return display.getSystemFont(getShell().getNativeZoom()).handle;
+	return display.getSystemFont(getShell().nativeZoom).handle;
 }
 
 int defaultForeground () {
@@ -776,8 +777,9 @@ void destroyWidget () {
 public boolean dragDetect (Event event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
-	Point loc = event.getLocationInPixels();
-	return dragDetect (event.button, event.count, event.stateMask, loc.x, loc.y);
+	Point loc = event.getLocation();
+	int zoom = getZoom();
+	return dragDetect (event.button, event.count, event.stateMask, DPIUtil.autoScaleUp(loc.x, zoom), DPIUtil.autoScaleUp(loc.y, zoom));
 }
 
 /**
@@ -819,7 +821,8 @@ public boolean dragDetect (Event event) {
 public boolean dragDetect (MouseEvent event) {
 	checkWidget ();
 	if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
-	return dragDetect (event.button, event.count, event.stateMask, DPIUtil.autoScaleUp(event.x), DPIUtil.autoScaleUp(event.y)); // To Pixels
+	int zoom = getZoom();
+	return dragDetect (event.button, event.count, event.stateMask, DPIUtil.autoScaleUp(event.x, zoom), DPIUtil.autoScaleUp(event.y, zoom)); // To Pixels
 }
 
 boolean dragDetect (int button, int count, int stateMask, int x, int y) {
@@ -941,7 +944,7 @@ void fillImageBackground (long hDC, Control control, RECT rect, int tx, int ty) 
 	if (control != null) {
 		Image image = control.backgroundImage;
 		if (image != null) {
-			control.drawImageBackground (hDC, handle, image.handle, rect, tx, ty);
+			control.drawImageBackground (hDC, handle, Image.win32_getHandle(image, getZoom()), rect, tx, ty);
 		}
 	}
 }
@@ -1153,14 +1156,14 @@ int getBackgroundPixel () {
  */
 public int getBorderWidth () {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getBorderWidthInPixels ());
+	return DPIUtil.scaleDown(getBorderWidthInPixels (), getZoom());
 }
 
 int getBorderWidthInPixels () {
 	long borderHandle = borderHandle ();
 	int bits1 = OS.GetWindowLong (borderHandle, OS.GWL_EXSTYLE);
-	if ((bits1 & OS.WS_EX_CLIENTEDGE) != 0) return OS.GetSystemMetrics (OS.SM_CXEDGE);
-	if ((bits1 & OS.WS_EX_STATICEDGE) != 0) return OS.GetSystemMetrics (OS.SM_CXBORDER);
+	if ((bits1 & OS.WS_EX_CLIENTEDGE) != 0) return getSystemMetrics (OS.SM_CXEDGE);
+	if ((bits1 & OS.WS_EX_STATICEDGE) != 0) return getSystemMetrics (OS.SM_CXBORDER);
 	int bits2 = OS.GetWindowLong (borderHandle, OS.GWL_STYLE);
 
 	if ((bits2 & OS.WS_BORDER) != 0) {
@@ -1170,9 +1173,9 @@ int getBorderWidthInPixels () {
 		 * saves screen space, but could break some layouts.
 		 */
 		if (isUseWsBorder ())
-			return OS.GetSystemMetrics (OS.SM_CXEDGE);
+			return getSystemMetrics (OS.SM_CXEDGE);
 
-		return OS.GetSystemMetrics (OS.SM_CXBORDER);
+		return getSystemMetrics (OS.SM_CXBORDER);
 	}
 
 	return 0;
@@ -1193,7 +1196,7 @@ int getBorderWidthInPixels () {
  */
 public Rectangle getBounds (){
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getBoundsInPixels ());
+	return DPIUtil.scaleDown(getBoundsInPixels (), getZoom());
 }
 
 Rectangle getBoundsInPixels () {
@@ -1309,7 +1312,7 @@ public Font getFont () {
 	if (font != null) return font;
 	long hFont = OS.SendMessage (handle, OS.WM_GETFONT, 0, 0);
 	if (hFont == 0) hFont = defaultFont ();
-	return Font.win32_new (display, hFont, getShell().getNativeZoom());
+	return Font.win32_new (display, hFont, getShell().nativeZoom);
 }
 
 /**
@@ -1361,7 +1364,7 @@ public Object getLayoutData () {
  */
 public Point getLocation () {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getLocationInPixels());
+	return DPIUtil.scaleDown(getLocationInPixels(), getZoom());
 }
 
 Point getLocationInPixels () {
@@ -1517,7 +1520,7 @@ public Shell getShell () {
  */
 public Point getSize (){
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getSizeInPixels ());
+	return DPIUtil.scaleDown(getSizeInPixels (), getZoom());
 }
 
 Point getSizeInPixels () {
@@ -1742,6 +1745,7 @@ public long internal_new_GC (GCData data) {
 			}
 		}
 		data.device = display;
+		data.nativeZoom = nativeZoom;
 		int foreground = getForegroundPixel ();
 		if (foreground != OS.GetTextColor (hDC)) data.foreground = foreground;
 		Control control = findBackgroundControl ();
@@ -1969,11 +1973,12 @@ boolean isUseWsBorder () {
 void mapEvent (long hwnd, Event event) {
 	if (hwnd != handle) {
 		POINT point = new POINT ();
-		Point loc = event.getLocationInPixels();
-		point.x = loc.x;
-		point.y = loc.y;
+		Point loc = event.getLocation();
+		int zoom = getZoom();
+		point.x = DPIUtil.autoScaleUp(loc.x, zoom);
+		point.y = DPIUtil.autoScaleUp(loc.y, zoom);
 		OS.MapWindowPoints (hwnd, handle, point, 1);
-		event.setLocationInPixels(point.x, point.y);
+		event.setLocation(DPIUtil.scaleDown(point.x, zoom), DPIUtil.scaleDown(point.y, zoom));
 	}
 }
 
@@ -2281,10 +2286,10 @@ void printWidget (long hwnd, long hdc, GC gc) {
 			hwndInsertAfter = OS.HWND_TOP;
 		}
 		if (fixPrintWindow) {
-			int x = OS.GetSystemMetrics (OS.SM_XVIRTUALSCREEN);
-			int y = OS.GetSystemMetrics (OS.SM_YVIRTUALSCREEN);
-			int width = OS.GetSystemMetrics (OS.SM_CXVIRTUALSCREEN);
-			int height = OS.GetSystemMetrics (OS.SM_CYVIRTUALSCREEN);
+			int x =getSystemMetrics (OS.SM_XVIRTUALSCREEN);
+			int y =getSystemMetrics (OS.SM_YVIRTUALSCREEN);
+			int width =getSystemMetrics (OS.SM_CXVIRTUALSCREEN);
+			int height =getSystemMetrics (OS.SM_CYVIRTUALSCREEN);
 			int flags = OS.SWP_NOSIZE | OS.SWP_NOZORDER | OS.SWP_NOACTIVATE | OS.SWP_DRAWFRAME;
 			if ((bits1 & OS.WS_VISIBLE) != 0) {
 				OS.DefWindowProc (hwnd, OS.WM_SETREDRAW, 0, 0);
@@ -2425,10 +2430,11 @@ public void redraw () {
  */
 public void redraw (int x, int y, int width, int height, boolean all) {
 	checkWidget ();
-	x = DPIUtil.autoScaleUp(x);
-	y = DPIUtil.autoScaleUp(y);
-	width = DPIUtil.autoScaleUp(width);
-	height = DPIUtil.autoScaleUp(height);
+	int zoom = getZoom();
+	x = DPIUtil.autoScaleUp(x, zoom);
+	y = DPIUtil.autoScaleUp(y, zoom);
+	width = DPIUtil.autoScaleUp(width, zoom);
+	height = DPIUtil.autoScaleUp(height, zoom);
 	if (width <= 0 || height <= 0) return;
 
 	RECT rect = new RECT ();
@@ -2930,7 +2936,8 @@ boolean sendGestureEvent (GESTUREINFO gi) {
 	int type = 0;
 	Point globalPt = new Point(gi.x, gi.y);
 	Point point = toControlInPixels(globalPt.x, globalPt.y);
-	event.setLocationInPixels(point.x, point.y);
+	int zoom = getZoom();
+	event.setLocation(DPIUtil.scaleDown(point.x, zoom), DPIUtil.scaleDown(point.y, zoom));
 	switch (gi.dwID) {
 		case OS.GID_ZOOM:
 			type = SWT.Gesture;
@@ -3010,7 +3017,8 @@ void sendTouchEvent (TOUCHINPUT touchInput []) {
 	POINT pt = new POINT ();
 	OS.GetCursorPos (pt);
 	OS.ScreenToClient (handle, pt);
-	event.setLocationInPixels(pt.x, pt.y);
+	int zoom = getZoom();
+	event.setLocation(DPIUtil.scaleDown(pt.x, zoom), DPIUtil.scaleDown(pt.y, zoom));
 	Touch [] touches = new Touch [touchInput.length];
 	Monitor monitor = getMonitor ();
 	for (int i = 0; i < touchInput.length; i++) {
@@ -3036,7 +3044,7 @@ void setBackground () {
 	if (control.backgroundImage != null) {
 		Shell shell = getShell ();
 		shell.releaseBrushes ();
-		setBackgroundImage (control.backgroundImage.handle);
+		setBackgroundImage (Image.win32_getHandle(control.backgroundImage, getZoom()));
 	} else {
 		setBackgroundPixel (control.background == -1 ? control.defaultBackground() : control.background);
 	}
@@ -3158,10 +3166,11 @@ void setBackgroundPixel (int pixel) {
  */
 public void setBounds(int x, int y, int width, int height) {
 	checkWidget ();
-	x = DPIUtil.autoScaleUp(x);
-	y = DPIUtil.autoScaleUp(y);
-	width = DPIUtil.autoScaleUp(width);
-	height = DPIUtil.autoScaleUp(height);
+	int zoom = getZoom();
+	x = DPIUtil.autoScaleUp(x, zoom);
+	y = DPIUtil.autoScaleUp(y, zoom);
+	width = DPIUtil.autoScaleUp(width, zoom);
+	height = DPIUtil.autoScaleUp(height, zoom);
 	setBoundsInPixels(x, y, width, height);
 }
 
@@ -3239,7 +3248,7 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
 public void setBounds (Rectangle rect) {
 	checkWidget ();
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
-	setBoundsInPixels(DPIUtil.autoScaleUp(rect));
+	setBoundsInPixels(DPIUtil.autoScaleUp(rect, getZoom()));
 }
 
 void setBoundsInPixels (Rectangle rect) {
@@ -3314,7 +3323,7 @@ public void setCursor (Cursor cursor) {
 }
 
 void setDefaultFont () {
-	long hFont = display.getSystemFont (getShell().getNativeZoom()).handle;
+	long hFont = display.getSystemFont (getShell().nativeZoom).handle;
 	OS.SendMessage (handle, OS.WM_SETFONT, hFont, 0);
 }
 
@@ -3416,14 +3425,14 @@ public void setFont (Font font) {
 	Font newFont = font;
 	if (newFont != null) {
 		if (newFont.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-		newFont = Font.win32_new(newFont, getShell().getNativeZoom());
+		newFont = Font.win32_new(newFont, getShell().nativeZoom);
 	}
 	long hFont = 0;
-	if (font != null) {
-		if (font.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
-		hFont = font.handle;
+	if (newFont != null) {
+		if (newFont.isDisposed()) error(SWT.ERROR_INVALID_ARGUMENT);
+		hFont = newFont.handle;
 	}
-	this.font = font;
+	this.font = newFont;
 	if (hFont == 0) hFont = defaultFont ();
 	OS.SendMessage (handle, OS.WM_SETFONT, hFont, 1);
 }
@@ -3493,8 +3502,9 @@ public void setLayoutData (Object layoutData) {
  */
 public void setLocation (int x, int y) {
 	checkWidget ();
-	x = DPIUtil.autoScaleUp(x);
-	y = DPIUtil.autoScaleUp(y);
+	int zoom = getZoom();
+	x = DPIUtil.autoScaleUp(x, zoom);
+	y = DPIUtil.autoScaleUp(y, zoom);
 	setLocationInPixels(x, y);
 }
 
@@ -3520,7 +3530,7 @@ void setLocationInPixels (int x, int y) {
 public void setLocation (Point location) {
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
-	location = DPIUtil.autoScaleUp(location);
+	location = DPIUtil.autoScaleUp(location, getZoom());
 	setLocationInPixels(location.x, location.y);
 }
 
@@ -3709,8 +3719,9 @@ public void setRegion (Region region) {
  */
 public void setSize (int width, int height) {
 	checkWidget ();
-	width = DPIUtil.autoScaleUp(width);
-	height = DPIUtil.autoScaleUp(height);
+	int zoom = getZoom();
+	width = DPIUtil.autoScaleUp(width, zoom);
+	height = DPIUtil.autoScaleUp(height, zoom);
 	setSizeInPixels(width, height);
 }
 
@@ -3745,7 +3756,7 @@ void setSizeInPixels (int width, int height) {
 public void setSize (Point size) {
 	checkWidget ();
 	if (size == null) error (SWT.ERROR_NULL_ARGUMENT);
-	size = DPIUtil.autoScaleUp(size);
+	size = DPIUtil.autoScaleUp(size, getZoom());
 	setSizeInPixels(size.x, size.y);
 }
 
@@ -3958,7 +3969,8 @@ void subclass () {
  */
 public Point toControl (int x, int y) {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(toControlInPixels(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y)));
+	int zoom = getZoom();
+	return DPIUtil.scaleDown(toControlInPixels(DPIUtil.autoScaleUp(x, zoom), DPIUtil.autoScaleUp(y, zoom)), zoom);
 }
 
 Point toControlInPixels (int x, int y) {
@@ -3991,8 +4003,9 @@ Point toControlInPixels (int x, int y) {
 public Point toControl (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	point = DPIUtil.autoScaleUp(point);
-	return DPIUtil.autoScaleDown(toControlInPixels(point.x, point.y));
+	int zoom = getZoom();
+	point = DPIUtil.autoScaleUp(point, zoom);
+	return DPIUtil.scaleDown(toControlInPixels(point.x, point.y), zoom);
 }
 
 /**
@@ -4017,7 +4030,8 @@ public Point toControl (Point point) {
  */
 public Point toDisplay (int x, int y) {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(toDisplayInPixels(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y)));
+	int zoom = getZoom();
+	return DPIUtil.scaleDown(toDisplayInPixels(DPIUtil.autoScaleUp(x, zoom), DPIUtil.autoScaleUp(y, zoom)), zoom);
 }
 
 Point toDisplayInPixels (int x, int y) {
@@ -4050,8 +4064,9 @@ Point toDisplayInPixels (int x, int y) {
 public Point toDisplay (Point point) {
 	checkWidget ();
 	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
-	point = DPIUtil.autoScaleUp(point);
-	return DPIUtil.autoScaleDown(toDisplayInPixels(point.x, point.y));
+	int zoom = getZoom();
+	point = DPIUtil.autoScaleUp(point, zoom);
+	return DPIUtil.scaleDown(toDisplayInPixels(point.x, point.y), zoom);
 }
 
 long topHandle () {
@@ -4558,7 +4573,7 @@ void updateBackgroundColor () {
 void updateBackgroundImage () {
 	Control control = findBackgroundControl ();
 	Image image = control != null ? control.backgroundImage : backgroundImage;
-	setBackgroundImage (image != null ? image.handle : 0);
+	setBackgroundImage (image != null ? Image.win32_getHandle(image, getZoom()) : 0);
 }
 
 void updateBackgroundMode () {
@@ -4686,9 +4701,9 @@ public boolean setParent (Composite parent) {
 	if (OS.SetParent (topHandle, parent.handle) == 0) return false;
 	this.parent = parent;
 	// If parent changed, zoom level might need to be adjusted
-	if (parent.getZoom() != getZoom()) {
-		int oldZoom = getZoom();
-		int newZoom = parent.getZoom();
+	if (parent.nativeZoom != nativeZoom) {
+		int oldZoom = nativeZoom;
+		int newZoom = parent.nativeZoom;
 		float scalingFactor = 1f * newZoom / oldZoom;
 		DPIZoomChangeRegistry.applyChange(this, newZoom, scalingFactor);
 	}
@@ -4884,21 +4899,19 @@ LRESULT WM_DESTROY (long wParam, long lParam) {
 
 LRESULT WM_DPICHANGED (long wParam, long lParam) {
 	// Map DPI to Zoom and compare
-	int nativeZoom = DPIUtil.mapDPIToZoom (OS.HIWORD (wParam));
-	int newSWTZoom = DPIUtil.getZoomForAutoscaleProperty (nativeZoom);
-	int oldSWTZoom = getShell().getZoom();
+	int newNativeZoom = DPIUtil.mapDPIToZoom (OS.HIWORD (wParam));
+	int oldNativeZoom = getShell().nativeZoom;
 
 	// Throw the DPI change event if zoom value changes
-	if (newSWTZoom != oldSWTZoom) {
+	if (newNativeZoom != oldNativeZoom) {
 		Event event = new Event();
 		event.type = SWT.ZoomChanged;
 		event.widget = this;
-		event.detail = newSWTZoom;
+		event.detail = newNativeZoom;
 		event.doit = true;
 
 		if (DPIUtil.isAutoScaleOnRuntimeActive()) {
-			DPIUtil.setDeviceZoom (nativeZoom);
-			getShell().setNativeZoom(nativeZoom);
+			DPIUtil.setDeviceZoom (newNativeZoom);
 		}
 
 		notifyListeners(SWT.ZoomChanged, event);
@@ -5597,7 +5610,8 @@ LRESULT WM_TABLET_FLICK (long wParam, long lParam) {
 			event.yDirection = 1;
 			break;
 	}
-	event.setLocationInPixels(fPoint.x, fPoint.y);
+	int zoom = getZoom();
+	event.setLocation(DPIUtil.scaleDown(fPoint.x, zoom), DPIUtil.scaleDown(fPoint.y, zoom));
 	event.type = SWT.Gesture;
 	event.detail = SWT.GESTURE_SWIPE;
 	setInputState (event, SWT.Gesture);
@@ -5734,7 +5748,7 @@ LRESULT wmColorChild (long wParam, long lParam) {
 		RECT rect = new RECT ();
 		OS.GetClientRect (handle, rect);
 		long hwnd = control.handle;
-		long hBitmap = control.backgroundImage.handle;
+		long hBitmap = Image.win32_getHandle(control.backgroundImage, getZoom());
 		OS.MapWindowPoints (handle, hwnd, rect, 2);
 		POINT lpPoint = new POINT ();
 		OS.GetWindowOrgEx (wParam, lpPoint);
@@ -5791,14 +5805,14 @@ private static void handleDPIChange(Widget widget, int newZoom, float scalingFac
 	if (!(widget instanceof Control control)) {
 		return;
 	}
-	resizeFont(control, control.getShell().getNativeZoom());
+	resizeFont(control, control.getShell().nativeZoom);
 
 	Image image = control.getBackgroundImage();
 	if (image != null) {
 		if (image.isDisposed()) {
 			control.setBackgroundImage(null);
 		} else {
-			control.setBackgroundImage(Image.win32_new(image, newZoom));
+			control.setBackgroundImage(image);
 		}
 	}
 }

@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.swt.internal;
 
+import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
@@ -31,6 +32,8 @@ public class CommonWidgetsDPIChangeHandlers {
 
 	public static void registerCommonHandlers() {
 		DPIZoomChangeRegistry.registerHandler(CommonWidgetsDPIChangeHandlers::handleItemDPIChange, Item.class);
+		DPIZoomChangeRegistry.registerHandler(CommonWidgetsDPIChangeHandlers::handleStyledTextDPIChange, StyledText.class);
+		DPIZoomChangeRegistry.registerHandler(CommonWidgetsDPIChangeHandlers::handleCComboDPIChange, CCombo.class);
 	}
 
 	private static void handleItemDPIChange(Widget widget, int newZoom, float scalingFactor) {
@@ -40,7 +43,25 @@ public class CommonWidgetsDPIChangeHandlers {
 		// Refresh the image
 		Image image = item.getImage();
 		if (image != null) {
-			item.setImage(Image.win32_new(image, newZoom));
+			item.setImage(image);
 		}
+	}
+
+	private static void handleStyledTextDPIChange(Widget widget, int newZoom, float scalingFactor) {
+		if (!(widget instanceof StyledText styledText)) {
+			return;
+		}
+
+
+		StyledText.updateAndRefreshCarets(styledText, caretToRefresh -> {
+			DPIZoomChangeRegistry.applyChange(caretToRefresh, newZoom, scalingFactor);
+			Caret.win32_setHeight(caretToRefresh, styledText.getLineHeight());
+		});
+	}
+	private static void handleCComboDPIChange(Widget widget, int newZoom, float scalingFactor) {
+		if (!(widget instanceof CCombo combo)) {
+			return;
+		}
+		CCombo.updateAndRefreshChildren(combo, childWidget -> DPIZoomChangeRegistry.applyChange(childWidget, newZoom, scalingFactor));
 	}
 }

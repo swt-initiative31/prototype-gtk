@@ -430,6 +430,7 @@ void fixMenus (Decorations newParent) {
 	parent.removeMenu (this);
 	newParent.addMenu (this);
 	this.parent = newParent;
+	this.nativeZoom = newParent.nativeZoom;
 }
 
 /**
@@ -1188,7 +1189,8 @@ public void setEnabled (boolean enabled) {
  */
 public void setLocation (int x, int y) {
 	checkWidget ();
-	setLocationInPixels(DPIUtil.autoScaleUp(x), DPIUtil.autoScaleUp(y));
+	int zoom = getZoom();
+	setLocationInPixels(DPIUtil.autoScaleUp(x, zoom), DPIUtil.autoScaleUp(y, zoom));
 }
 
 void setLocationInPixels (int x, int y) {
@@ -1225,7 +1227,7 @@ void setLocationInPixels (int x, int y) {
 public void setLocation (Point location) {
 	checkWidget ();
 	if (location == null) error (SWT.ERROR_NULL_ARGUMENT);
-	location = DPIUtil.autoScaleUp(location);
+	location = DPIUtil.autoScaleUp(location, getZoom());
 	setLocationInPixels(location.x, location.y);
 }
 
@@ -1319,7 +1321,7 @@ void updateBackground () {
 	hBrush = 0;
 
 	if (backgroundImage != null)
-		hBrush = OS.CreatePatternBrush (backgroundImage.handle);
+		hBrush = OS.CreatePatternBrush (Image.win32_getHandle(backgroundImage, getZoom()));
 	else if (background != -1)
 		hBrush = OS.CreateSolidBrush (background);
 
@@ -1353,7 +1355,7 @@ LRESULT wmTimer (long wParam, long lParam) {
 			if (!success) return null;
 			if (OS.PtInRect (rect, pt)) {
 				// Mouse cursor is within the bounds of menu item
-				selectedMenuItem.showTooltip (pt.x, pt.y + OS.GetSystemMetrics(OS.SM_CYCURSOR) / 2 + 5);
+				selectedMenuItem.showTooltip (pt.x, pt.y + getSystemMetrics(OS.SM_CYCURSOR) / 2 + 5);
 			} else {
 				/*
 				 * Mouse cursor is outside the bounds of the menu item:

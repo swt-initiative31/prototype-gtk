@@ -391,7 +391,7 @@ public ExpandItem [] getItems () {
  */
 public int getSpacing () {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getSpacingInPixels ());
+	return DPIUtil.scaleDown(getSpacingInPixels (), getZoom());
 }
 
 int getSpacingInPixels () {
@@ -561,7 +561,7 @@ void setScrollbar () {
  */
 public void setSpacing (int spacing) {
 	checkWidget ();
-	setSpacingInPixels(DPIUtil.autoScaleUp(spacing));
+	setSpacingInPixels(DPIUtil.autoScaleUp(spacing, getZoom()));
 }
 
 void setSpacingInPixels (int spacing) {
@@ -789,7 +789,7 @@ LRESULT WM_PAINT (long wParam, long lParam) {
 			if (hooks (SWT.Paint) || filters (SWT.Paint)) {
 				Event event = new Event ();
 				event.gc = gc;
-				event.setBoundsInPixels(new Rectangle(rect.left, rect.top, width, height));
+				event.setBounds(DPIUtil.scaleDown(new Rectangle(rect.left, rect.top, width, height), getZoom()));
 				sendEvent (SWT.Paint, event);
 				event.gc = null;
 			}
@@ -807,7 +807,7 @@ LRESULT WM_PRINTCLIENT (long wParam, long lParam) {
 	GCData data = new GCData ();
 	data.device = display;
 	data.foreground = getForegroundPixel ();
-	GC gc = GC.win32_new (wParam, data);
+	GC gc = createNewGC(wParam, data);
 	drawWidget (gc, rect);
 	gc.dispose ();
 	return result;

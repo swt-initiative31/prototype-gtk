@@ -420,7 +420,7 @@ public static Shell gtk_new (Display display, long handle) {
  * @since 3.3
  */
 public static Shell internal_new (Display display, long handle) {
-	return new Shell (display, null, SWT.NO_TRIM, handle, false);
+	return new Shell (display, null, SWT.NO_TRIM, 0, false);
 }
 
 static int checkStyle (Shell parent, int style) {

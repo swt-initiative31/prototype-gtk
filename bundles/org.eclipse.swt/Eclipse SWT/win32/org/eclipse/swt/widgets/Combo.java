@@ -655,8 +655,8 @@ public void clearSelection () {
 		width += pcbi.itemLeft + (pcbi.buttonRight - pcbi.buttonLeft);
 		height = (pcbi.buttonBottom - pcbi.buttonTop) + pcbi.buttonTop * 2;
 	} else {
-		int border = OS.GetSystemMetrics (OS.SM_CXEDGE);
-		width += OS.GetSystemMetrics (OS.SM_CXVSCROLL) + border * 2;
+		int border = getSystemMetrics (OS.SM_CXEDGE);
+		width += getSystemMetrics (OS.SM_CXVSCROLL) + border * 2;
 		int textHeight = (int)OS.SendMessage (handle, OS.CB_GETITEMHEIGHT, -1, 0);
 		if ((style & SWT.DROP_DOWN) != 0) {
 			height = textHeight + 6;
@@ -665,7 +665,7 @@ public void clearSelection () {
 		}
 	}
 	if ((style & SWT.SIMPLE) != 0 && (style & SWT.H_SCROLL) != 0) {
-		height += OS.GetSystemMetrics (OS.SM_CYHSCROLL);
+		height += getSystemMetrics (OS.SM_CYHSCROLL);
 	}
 	return new Point (width, height);
 }
@@ -911,7 +911,7 @@ boolean dragDetect (long hwnd, int x, int y, boolean filter, boolean [] detect, 
  */
 public Point getCaretLocation () {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getCaretLocationInPixels());
+	return DPIUtil.scaleDown(getCaretLocationInPixels(), getZoom());
 }
 
 Point getCaretLocationInPixels () {
@@ -1079,7 +1079,7 @@ public int getItemCount () {
  */
 public int getItemHeight () {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getItemHeightInPixels());
+	return DPIUtil.scaleDown(getItemHeightInPixels(), getZoom());
 }
 
 int getItemHeightInPixels () {
@@ -1345,7 +1345,7 @@ public String getText () {
  */
 public int getTextHeight () {
 	checkWidget ();
-	return DPIUtil.autoScaleDown(getTextHeightInPixels());
+	return DPIUtil.scaleDown(getTextHeightInPixels(), getZoom());
 }
 
 int getTextHeightInPixels () {
@@ -2188,7 +2188,7 @@ void setScrollWidth (int scrollWidth) {
 		OS.SendMessage (handle, OS.CB_SETDROPPEDWIDTH, 0, 0);
 		OS.SendMessage (handle, OS.CB_SETHORIZONTALEXTENT, scrollWidth, 0);
 	} else {
-		scrollWidth += OS.GetSystemMetrics (OS.SM_CYHSCROLL);
+		scrollWidth += getSystemMetrics (OS.SM_CYHSCROLL);
 		OS.SendMessage (handle, OS.CB_SETDROPPEDWIDTH, scrollWidth, 0);
 		OS.SendMessage (handle, OS.CB_SETHORIZONTALEXTENT, 0, 0);
 	}

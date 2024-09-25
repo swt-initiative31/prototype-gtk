@@ -827,5 +827,4 @@ boolean traverseReturn () {
 		return GTK3.gtk_window_activate_default (shellHandle);
 	}
 }
-
 }
